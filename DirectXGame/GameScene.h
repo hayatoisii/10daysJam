@@ -19,6 +19,10 @@ public:
 	void Draw();
 
 private:
+	KamataEngine::Model* modelEnd_ = nullptr;
+	WorldTransform endTransformLeft_;
+	WorldTransform endTransformRight_;
+
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 0.0f;
 
@@ -32,7 +36,7 @@ private:
 	const float platformSpawnInterval = 1.2f;
 
 
-	const float minPlatformDistance = 8.0f;
+	const float minPlatformDistance = 4.0f;
 
 	// プレイヤーオブジェクトへのポインタ
 	Player* player_ = nullptr;

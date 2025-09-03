@@ -48,6 +48,9 @@ private:
 	// ジャンプ初速度
 	const float jumpPower = 1.3f;
 
+	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
+	const float minPlatformX = -20.0f; // 左端
+	const float maxPlatformX = 20.0f; 
 
 	bool isOnGround_ = false;
 

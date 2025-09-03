@@ -27,6 +27,14 @@ void Player::Update() {
 	}
 	worldTransform_.translation_.x += velocityX_;
 
+	// X座標の上限・下限を適用
+	if (worldTransform_.translation_.x < minPlatformX) {
+		worldTransform_.translation_.x = minPlatformX;
+	}
+	if (worldTransform_.translation_.x > maxPlatformX) {
+		worldTransform_.translation_.x = maxPlatformX;
+	}
+
 	// ジャンプ
 	if (input_->TriggerKey(DIK_SPACE)) {
 		if (jumpCount_ < maxJumpCount_) {

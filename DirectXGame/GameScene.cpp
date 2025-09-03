@@ -17,6 +17,18 @@ void GameScene::Initialize() {
 	// モデルの読み込み
 	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
+	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
+
+    // 左端（-20, 0, 0）に配置
+	endTransformLeft_.Initialize();
+	endTransformLeft_.translation_ = Vector3(-22.3f, 0.0f, 0.0f);
+
+	// 右端（20, 0, 0）に配置
+	endTransformRight_.Initialize();
+	endTransformRight_.translation_ = Vector3(22.3f, 0.0f, 0.0f);
+
+	endTransformLeft_.UpdateMatarix();
+	endTransformRight_.UpdateMatarix();
 
 	// カメラ初期化
 	camera_.Initialize();
@@ -193,6 +205,11 @@ void GameScene::Draw() {
 	}
 	// プレイヤーを描画
 	player_->Draw();
+
+	if (modelEnd_) {
+		modelEnd_->Draw(endTransformLeft_, camera_);
+		modelEnd_->Draw(endTransformRight_, camera_);
+	}
 
 	// 3D描画終了処理
 	Model::PostDraw();
