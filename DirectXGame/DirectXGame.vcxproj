@@ -106,7 +106,9 @@
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BIt_Map_Font.cpp" />
     <ClCompile Include="GameScene.cpp" />
+    <ClCompile Include="Graph.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathUtility.cpp" />
     <ClCompile Include="Platform.cpp" />
@@ -190,7 +192,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABB.h" />
+    <ClInclude Include="BIt_Map_Font.h" />
     <ClInclude Include="GameScene.h" />
+    <ClInclude Include="Graph.h" />
     <ClInclude Include="MathUtility.h" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="Player.h" />

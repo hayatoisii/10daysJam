@@ -18,13 +18,19 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 void Player::Update() {
 	velocityX_ = 0.0f;
 
+	movedByInput_ = false;
 	// 左右移動
 	if (input_->PushKey(DIK_A)) {
 		velocityX_ = -speed;
+
+		movedByInput_ = true;
 	}
 	if (input_->PushKey(DIK_D)) {
 		velocityX_ = speed;
+
+		movedByInput_ = true;
 	}
+
 	worldTransform_.translation_.x += velocityX_;
 
 	// ジャンプ
@@ -33,6 +39,7 @@ void Player::Update() {
 			velocityY_ = inversion ? -jumpPower : jumpPower;
 			isJumping_ = true;
 			jumpCount_++;
+			movedByInput_ = true; // ← ここを追加
 		}
 	}
 
@@ -85,11 +92,12 @@ void Player::Update() {
 	worldTransform_.UpdateMatarix();
 }
 
-
 void Player::SetOnGround(bool flag) {
+	// ★修正: onGround_ メンバー変数を正しく更新
+	onGround_ = flag;
 	if (flag) {
 		isJumping_ = false;
-		jumpCount_ = 0; // ★着地時にジャンプ回数リセット
+		jumpCount_ = 0;
 	} else {
 		isJumping_ = true;
 	}

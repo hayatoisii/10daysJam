@@ -32,6 +32,15 @@ public:
 
 	void SetOnGround(bool flag);
 
+	bool IsOnGround() const { return onGround_; }
+	void Set_Bit_Ground(bool value) { onGround_ = value; }
+
+	// ★追加: プレイヤーが上昇中かどうかを返す
+	bool IsRising() const { return inversion ? velocityY_ < 0.0f : velocityY_ > 0.0f; }
+
+	void SetMovedByInput(bool value) { movedByInput_ = value; }
+	bool IsMovedByInput() const { return movedByInput_; }
+
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -47,7 +56,6 @@ private:
 
 	// ジャンプ初速度
 	const float jumpPower = 1.3f;
-
 
 	bool isOnGround_ = false;
 
@@ -72,4 +80,7 @@ private:
 	WorldTransform worldTransform_;
 	AABB aabb_;
 	Vector3 halfSize_{0.5f, 0.5f, 0.5f};
+
+	bool onGround_ = false; // 地面にいるかどうか
+	bool movedByInput_ = false;
 };

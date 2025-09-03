@@ -2,6 +2,8 @@
 #include "KamataEngine.h"
 #include "Platform.h"
 #include "Player.h"
+#include "BIt_Map_Font.h"
+#include "Graph.h"
 #include <random>
 
 class GameScene {
@@ -58,4 +60,17 @@ private:
 
 	// 乱数生成エンジン（メルセンヌ・ツイスタ）
 	std::mt19937 randomEngine_;
+
+	// スコア表示用フォント
+	Graph* graph_ = nullptr;
+	
+	// スコア表示用フォント
+	BIt_Map_Font* font_ = nullptr;
+
+	Vector3 prevPlayerPos_; // 前フレームのプレイヤー位置
+
+	int score_ = 0;
+	int prevScore_ = 0; // 追加
+
+	bool prevOnGround_ = false; // 前フレームの地面判定
 };

@@ -31,6 +31,8 @@ void GameScene::Initialize() {
 	player_ = new Player();
 	player_->Initialize(modelPlayer_, &camera_, playerPos);
 
+	prevPlayerPos_ = playerPos; // 追加
+
 	// 足場をランダムに初期生成
 	std::uniform_real_distribution<float> posX(-20.0f, 20.0f);
 	std::uniform_real_distribution<float> posY(-10.0f, 40.0f);
@@ -48,8 +50,11 @@ void GameScene::Initialize() {
 	// ワールドトランスフォームの初期化
 	worldTransform.Initialize();
 
+	graph_ = new Graph();
+	graph_->Initialize();
 
-	
+	font_ = new BIt_Map_Font();
+	font_->Initialize();
 }
 
 void GameScene::Update() {
@@ -133,11 +138,35 @@ void GameScene::Update() {
 	// =====================
 	// プレイヤー更新
 	// =====================
+
+	// プレイヤー更新
 	player_->Update();
+
+	// プレイヤーの現在位置
+	Vector3 currentPlayerPos = player_->GetPosition();
+
+	// 落下・ジャンプ中か判定
+	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+
+	// Y座標が変化している場合のみスコア加算
+	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+		score_++;
+	}
+
+	prevPlayerPos_ = currentPlayerPos;
+	prevOnGround_ = player_->IsOnGround();
+
+	if (score_ != prevScore_) {
+		font_->Set(score_);
+		prevScore_ = score_;
+	}
+
+	graph_->Update();
 
 	// =====================
 	// 衝突判定（横 + 縦 全部ここで処理）
 	// =====================
+	bool onGroundThisFrame = false; // ★追加：現在のフレームで着地しているかを判定するフラグ
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
@@ -171,18 +200,21 @@ void GameScene::Update() {
 				// 上から着地
 				playerPos.y += overlap.y;
 				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
+				onGroundThisFrame = true; // ★修正：フラグを立てる
 			} else {
 				// 下からぶつかった
 				playerPos.y -= overlap.y;
 				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
+				onGroundThisFrame = true; // ★修正：フラグを立てる
 			}
 		}
 
 		// 修正した座標を反映
 		player_->SetPosition(playerPos);
 	}
+
+	// ★追加：ループの最後にまとめてプレイヤーの地面状態を更新
+	player_->SetOnGround(onGroundThisFrame);
 }
 
 void GameScene::Draw() {
@@ -208,6 +240,9 @@ void GameScene::Draw() {
 
 	// bluePorlモデルを描画
 	modelBluePorl_->Draw(bluePorlTransform_, camera_);
+
+	graph_->Draw();
+	font_->Draw();
 
 	// 3D描画終了処理
 	Model::PostDraw();
