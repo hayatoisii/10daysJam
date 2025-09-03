@@ -18,6 +18,11 @@ void GameScene::Initialize() {
 	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 
+	modelBluePorl_ = KamataEngine::Model::CreateFromOBJ("bluePorl", true);
+
+	bluePorlTransform_.Initialize();
+	bluePorlTransform_.translation_ = bluePorlPos_;
+
 	// カメラ初期化
 	camera_.Initialize();
 
@@ -42,9 +47,16 @@ void GameScene::Initialize() {
 
 	// ワールドトランスフォームの初期化
 	worldTransform.Initialize();
+
+
+	
 }
 
 void GameScene::Update() {
+
+	bluePorlTransform_.translation_.y += 720.0f;
+	bluePorlTransform_.TransferMatrix();
+
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
 	if (platformSpawnTimer >= platformSpawnInterval) {
@@ -193,6 +205,9 @@ void GameScene::Draw() {
 	}
 	// プレイヤーを描画
 	player_->Draw();
+
+	// bluePorlモデルを描画
+	modelBluePorl_->Draw(bluePorlTransform_, camera_);
 
 	// 3D描画終了処理
 	Model::PostDraw();

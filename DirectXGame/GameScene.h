@@ -43,6 +43,10 @@ private:
 	// プラットフォームモデル
 	KamataEngine::Model* modelPlatform_ = nullptr;
 
+	KamataEngine::Model* modelBluePorl_ = nullptr;
+	KamataEngine::WorldTransform bluePorlTransform_;
+	Vector3 bluePorlPos_ = {0.0f, 720.0f, 0.0f};
+
 	// カメラ
 	KamataEngine::Camera camera_;
 
