@@ -43,14 +43,20 @@ private:
 	const float maxFallSpeed = 1.0f;
 
 	// 重力
-	float gravity = -0.08f;
+	float gravity = -0.07f;
 
 	// ジャンプ初速度
 	const float jumpPower = 1.3f;
 
+
+	bool isOnGround_ = false;
+
 	// 速度
 	float velocityY_ = 0.0f;
 	float velocityX_ = 0.0f;
+
+	float targetGravity = -0.06f; // 目標重力
+	float gravityLerpSpeed = 0.07f;
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;

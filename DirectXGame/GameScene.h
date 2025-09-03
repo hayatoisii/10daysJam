@@ -29,7 +29,7 @@ private:
 	bool platformSideFlag = false;
 
 	// プラットフォーム生成間隔（秒）
-	const float platformSpawnInterval = 1.0f;
+	const float platformSpawnInterval = 1.2f;
 
 
 	const float minPlatformDistance = 8.0f;

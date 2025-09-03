@@ -29,24 +29,25 @@ void Player::Update() {
 
 	// ジャンプ
 	if (input_->TriggerKey(DIK_SPACE)) {
-		if (jumpCount_ < maxJumpCount_) { // ← 回数チェック
+		if (jumpCount_ < maxJumpCount_) {
 			velocityY_ = inversion ? -jumpPower : jumpPower;
 			isJumping_ = true;
 			jumpCount_++;
 		}
 	}
 
+	// --- 重力値を補間 ---
+	gravity += (targetGravity - gravity) * gravityLerpSpeed;
+
 	// 重力
 	velocityY_ += gravity;
 
 	// 落下速度の上限を適用
 	if (!inversion) {
-		// 通常（下向き重力）
 		if (velocityY_ > maxFallSpeed) {
 			velocityY_ = maxFallSpeed;
 		}
 	} else {
-		// 反転（上向き重力）
 		if (velocityY_ < -maxFallSpeed) {
 			velocityY_ = -maxFallSpeed;
 		}
@@ -59,18 +60,20 @@ void Player::Update() {
 		if (worldTransform_.translation_.y <= -20.0f) {
 			worldTransform_.translation_.y = -20.0f;
 			velocityY_ = 0.0f;
-			SetOnGround(true); // ← ここでジャンプ回数リセット
+			SetOnGround(true);
 			inversion = true;
-			gravity = -gravity;
+			// gravity = -gravity; ← ここは削除
+			targetGravity = 0.07f; // 目標重力を上向きに
 			platformScrollSpeed = -fabs(platformScrollSpeed);
 		}
 	} else {
 		if (worldTransform_.translation_.y >= 18.0f) {
 			worldTransform_.translation_.y = 18.0f;
 			velocityY_ = 0.0f;
-			SetOnGround(true); // ← 同じくリセット
+			SetOnGround(true);
 			inversion = false;
-			gravity = -gravity;
+			// gravity = -gravity; ← ここは削除
+			targetGravity = -0.07f; // 目標重力を下向きに
 			platformScrollSpeed = fabs(platformScrollSpeed);
 		}
 	}
@@ -81,6 +84,7 @@ void Player::Update() {
 
 	worldTransform_.UpdateMatarix();
 }
+
 
 void Player::SetOnGround(bool flag) {
 	if (flag) {
