@@ -9,6 +9,7 @@ GameScene::~GameScene() {
 	}
 }
 
+
 void GameScene::Initialize() {
 	// 乱数エンジンの初期化
 	std::random_device rd;
