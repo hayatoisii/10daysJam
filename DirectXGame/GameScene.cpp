@@ -197,6 +197,7 @@ void GameScene::Update() {
 		return;
 	}
 
+
 	// プレイヤーの更新
 	player_->Update();
 
