@@ -7,6 +7,12 @@ GameScene::~GameScene() {
 	for (auto platform : platforms_) {
 		delete platform;
 	}
+
+	for (auto spike : spikes_) {
+		delete spike;
+	}
+	delete graph_;
+	graph_ = nullptr;
 }
 
 
@@ -20,6 +26,9 @@ void GameScene::Initialize() {
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 
 	modelBluePorl_ = KamataEngine::Model::CreateFromOBJ("bluePorl", true);
+
+	// とげのモデルを読み込む（例: spike.obj）
+	modelSpike_ = KamataEngine::Model::CreateFromOBJ("toge", true); 
 
 	bluePorlTransform_.Initialize();
 	bluePorlTransform_.translation_ = bluePorlPos_;
@@ -136,12 +145,83 @@ void GameScene::Update() {
 		lastPlatformX = x; // 必要なら記憶
 	}
 
+	// とげの生成タイミング管理
+	float spikeSpawnInterval = 3.0f; // とげの生成間隔（秒）
+	static float spikeSpawnTimer = 0.0f;
+	spikeSpawnTimer += 1.0f / 60.0f;
+
+	if (spikeSpawnTimer >= spikeSpawnInterval) {
+		spikeSpawnTimer = 0.0f;
+
+		// プレイヤーの重力方向に応じて生成位置を調整
+		float spawnY = player_->IsInversion() ? 21.0f : -20.0f;
+
+		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
+		Vector3 pos = {posX(randomEngine_), spawnY, 0.0f};
+		Vector3 scale = {1.0f, 1.0f, 1.0f};
+
+		Spike* spike = new Spike();
+		spike->Initialize(pos, scale, modelSpike_, &camera_);
+		spikes_.push_back(spike);
+	}
+
+	// とげを更新し、画面外のものを削除
+	//float scrollSpeed = (player_->GetGravity() > 0.0f) ? -0.1f : 0.1f;
+	for (auto it = spikes_.begin(); it != spikes_.end();) {
+		(*it)->SetScrollSpeed(scrollSpeed);
+		(*it)->Update();
+
+		Vector3 pos = (*it)->GetWorldPosition();
+		if (player_->IsInversion()) {
+			if (pos.y > 22.0f) {
+				delete *it;
+				it = spikes_.erase(it);
+				continue;
+			}
+		} else {
+			if (pos.y < -22.0f) {
+				delete *it;
+				it = spikes_.erase(it);
+				continue;
+			}
+		}
+		++it;
+	}
+
 	// =====================
 	// プレイヤー更新
 	// =====================
 
-	// プレイヤー更新
+	// ゲームオーバーなら更新を停止
+	if (isGameOver_) {
+		return;
+	}
+
+	// プレイヤーの更新
 	player_->Update();
+
+	// スパイクとの衝突判定
+	for (auto spike : spikes_) {
+		const AABB& spikeAABB = spike->GetAABB();
+		const AABB& playerAABB = player_->GetAABB();
+
+		if (playerAABB.IsColliding(spikeAABB)) {
+			// とげに衝突した場合
+			playerHP_--; // HPを1減らす
+
+			if (playerHP_ <= 0) {
+				isGameOver_ = true;
+				// ここでゲームオーバー時の処理を記述する（例: リスタートボタンを表示するなど）
+				OutputDebugStringA("Game Over!\n");
+			}
+
+			// 一時的にプレイヤーを無敵状態にするなど、連続ヒットを防ぐ処理を入れると良い
+			// 現状はHPが減るだけ
+		}
+	}
+
+	// HP表示の更新
+	graph_->Update(playerHP_);
 
 	// プレイヤーの現在位置
 	Vector3 currentPlayerPos = player_->GetPosition();
@@ -161,8 +241,6 @@ void GameScene::Update() {
 		font_->Set(score_);
 		prevScore_ = score_;
 	}
-
-	graph_->Update();
 
 	// =====================
 	// 衝突判定（横 + 縦 全部ここで処理）
@@ -224,6 +302,9 @@ void GameScene::Draw() {
 	// 2D描画前準備
 	Sprite::PreDraw(dxCommon->GetCommandList());
 	// 2D描画（必要ならここに描画処理を書く）
+
+	graph_->Draw();
+
 	Sprite::PostDraw();
 
 	// 深度バッファクリア
@@ -232,17 +313,23 @@ void GameScene::Draw() {
 	// 3D描画前準備
 	Model::PreDraw(dxCommon->GetCommandList());
 
+	// プレイヤーを描画
+	player_->Draw();
+	
 	// 足場を描画
 	for (auto platform : platforms_) {
 		platform->Draw();
 	}
-	// プレイヤーを描画
-	player_->Draw();
+
+	// とげを描画
+	for (auto spike : spikes_) {
+		spike->Draw();
+	}
+
 
 	// bluePorlモデルを描画
 	modelBluePorl_->Draw(bluePorlTransform_, camera_);
 
-	graph_->Draw();
 	font_->Draw();
 
 	// 3D描画終了処理

@@ -1,51 +1,33 @@
 #include "Graph.h"
 
-Graph::~Graph() 
-{
-	delete sprite_;
-	sprite_ = nullptr;
-	delete sprite2_;
-	sprite2_ = nullptr;
+Graph::~Graph() {
+	// ハートスプライトを解放
+	for (int i = 0; i < 3; ++i) {
+		delete hpSprites_[i];
+		hpSprites_[i] = nullptr;
+	}
 }
 
 void Graph::Initialize() {
-	// テクスチャの読み込み
-	textureHandle_ = TextureManager::Load("HPR.png");
-	textureHandle2_ = TextureManager::Load("HP.png");
-	// スプライトの生成
-	sprite_ = Sprite::Create(textureHandle_, {10, 10});
-	sprite2_ = Sprite::Create(textureHandle2_, {10, 10});
+	// ハートテクスチャの読み込み
+	hpTextureHandle_ = TextureManager::Load("HP.png");
+
+	// 3つのハートスプライトを生成
+	for (int i = 0; i < 3; ++i) {
+		hpSprites_[i] = Sprite::Create(hpTextureHandle_, {50.0f + i * 60.0f, 50.0f});
+	}
 }
 
-void Graph::Update() {
-
-	hp_ -= 1.0f;
-	if (hp_ <= 0.0f) {
-		hp_ = hpMax_;
-	}
-
-	Vector2 size = sprite_->GetSize();
-	size.x = hpMax_;
-	size.y = 30;
-	sprite_->SetSize(size);
-
-	Vector2 size2 = sprite2_->GetSize();
-	size2.x = hp_;
-	size2.y = 30;
-	sprite2_->SetSize(size2);
-
-	Vector4 color = sprite_->GetColor();
-	color.w = 0.5f;
-	sprite_->SetColor(color);
+void Graph::Update(int hp) {
+	// 現在のHPを更新
+	currentHP_ = hp;
 }
 
 void Graph::Draw() {
-	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
-
-	Sprite::PreDraw(dxCommon->GetCommandList());
-
-	sprite_->Draw();
-	sprite2_->Draw();
-
-	Sprite::PostDraw();
+	// 現在のHPの数だけハートを描画
+	for (int i = 0; i < currentHP_; ++i) {
+		if (hpSprites_[i]) {
+			hpSprites_[i]->Draw();
+		}
+	}
 }

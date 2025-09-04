@@ -5,22 +5,23 @@ using namespace KamataEngine;
 
 class Graph {
 public:
-	
+	// デストラクタ
 	~Graph();
 
+	// 初期化
 	void Initialize();
 
-	void Update();
+	// 更新
+	void Update(int hp);
 
+	// 描画
 	void Draw();
 
 private:
-	uint32_t textureHandle_ = 0;
-	uint32_t textureHandle2_ = 0;
+	// HP表示用
+	uint32_t hpTextureHandle_ = 0;
+	Sprite* hpSprites_[3] = {nullptr, nullptr, nullptr}; // ハートを3つ管理
 
-	Sprite* sprite_ = nullptr;
-	Sprite* sprite2_ = nullptr;
-
-	float hp_ = 200.0f;
-	const float hpMax_ = 200.0f;
+	// 現在のHP
+	int currentHP_ = 3;
 };

@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "BIt_Map_Font.h"
 #include "Graph.h"
+#include "Spike.h"
 #include <random>
 
 class GameScene {
@@ -73,4 +74,14 @@ private:
 	int prevScore_ = 0; // 追加
 
 	bool prevOnGround_ = false; // 前フレームの地面判定
+
+	// とげのモデル
+	KamataEngine::Model* modelSpike_ = nullptr;
+
+	// 動的に生成されるとげのコンテナ
+	std::vector<Spike*> spikes_;
+
+	// HPとゲームの状態
+	int playerHP_ = 3;
+	bool isGameOver_ = false;
 };
