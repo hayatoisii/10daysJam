@@ -5,6 +5,7 @@
 #include <3d/WorldTransform.h>
 #include <KamataEngine.h>
 #include <audio/Audio.h>
+#include <math/Vector2.h>
 
 /// <summary>
 /// タイトルシーン
@@ -78,4 +79,15 @@ private:
 	uint32_t TitleSEHandle3_ = 0;
 	uint32_t voiceHandle_ = 0;
 	uint32_t voiceHandle2_ = 0;
+
+	float sprite2MoveSpeed = 5.0f;         // sprites[1]の移動速度
+	bool isMovingDown = false;             // 下に移動中か否か
+	bool isFlipped = false;                // スプライトが反転しているか否か
+	float animationTimer = 0.0f;           // アニメーション用のタイマー
+	const float FLIP_THRESHOLD = -100.0f;  // 反転を開始するY座標の閾値 (例: 中央)
+	const float SCREEN_EDGE_Y = -100.0f;   // 画面上端のY座標 (画面外)
+	const float SCREEN_BOTTOM_Y = 1280.0f; // 画面下端のY座標 (画面外)
+
+	// スプライト2用のワールドトランスフォーム
+	KamataEngine::WorldTransform sprite2WorldTransform_;
 };

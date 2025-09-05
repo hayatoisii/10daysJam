@@ -22,6 +22,9 @@ void TitleScnce::Initialize() {
 	textureHandle2_ = KamataEngine::TextureManager::Load("Title/ShotGame.png");
 	sprite2_ = KamataEngine::Sprite::Create(textureHandle2_, {0, 0});
 
+	// スプライト2の初期位置を画面下部に設定
+	sprite2_->SetPosition({0, SCREEN_BOTTOM_Y});
+
 	textureHandle3_ = KamataEngine::TextureManager::Load("Title/HitEnter.png");
 	sprite3_ = KamataEngine::Sprite::Create(textureHandle3_, {0, 0});
 
@@ -30,22 +33,20 @@ void TitleScnce::Initialize() {
 
 	Timer_ = 0.0f;
 	isFinished_ = false;
+	isMovingDown = false; // 最初は上へ移動
+	isFlipped = false;    // 最初は反転しない
 
 	// タイトルを中央に寄せるために調整
-	titleWorldTransform_.translation_ = {0.0f, 0.0f, 0.0f}; // x, y, zの値を調整
+	titleWorldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
 
-	titleWorldTransformFont_.translation_ = {0.0f, 0.0f, 0.0f}; // x, y, zの値を調整
+	titleWorldTransformFont_.translation_ = {0.0f, 0.0f, 0.0f};
 
 	titleskydome.translation_ = {0.0f, 0.0f, 0.0f};
-
-	// sprite2_の初期位置を画面外（上）に設定
-	if (sprite2_) {
-		sprite2_->SetPosition({0, -static_cast<float>(1280)}); // 画面上部外へ（高さは適宜調整）
-	}
 
 	// スプライトの初期化
 	InitializeSprites();
 }
+
 
 void TitleScnce::InitializeSprites() {
 	sprites.push_back(sprite_);
@@ -55,26 +56,42 @@ void TitleScnce::InitializeSprites() {
 }
 
 void TitleScnce::Update() {
-	Timer_ += 1.0f; // フレームごとに加算
+	Timer_ += 1.0f;
 
-	// Enterキーでタイトル終了
-	if (input_->TriggerKey(DIK_RETURN) || input_->TriggerKey(DIK_RETURN)) {
-		// audio_->PlayWave(TitleSEHandle3_, false); // スタートSE
+	if (input_->TriggerKey(DIK_RETURN)) {
 		isFinished_ = true;
 	}
 
-	// 降下アニメーション
 	if (sprite2_) {
-		auto pos = sprite2_->GetPosition();
-		float targetY = 0.0f; // 目的のY座標
-		float speed = 20.0f;  // 降りてくる速さ（調整可）
+		// 現在のスプライトの位置を取得
+		KamataEngine::Vector2 pos = sprite2_->GetPosition();
 
-		if (pos.y < targetY) {
-			pos.y += speed;
-			if (pos.y > targetY)
-				pos.y = targetY; // 行き過ぎ防止
-			sprite2_->SetPosition(pos);
+		// 移動方向のロジック
+		if (isMovingDown) {
+			// 下に移動
+			pos.y += sprite2MoveSpeed;
+
+			// 画面下端に達したら、上に切り替えて反転
+			if (pos.y >= SCREEN_BOTTOM_Y) {
+				isMovingDown = false;
+				isFlipped = !isFlipped;
+			}
+		} else {
+			// 上に移動
+			pos.y -= sprite2MoveSpeed;
+
+			// 中央に達したら、下に切り替えて反転
+			if (pos.y <= FLIP_THRESHOLD) {
+				isMovingDown = true;
+				isFlipped = !isFlipped;
+			}
 		}
+
+		// スプライトの位置を更新
+		sprite2_->SetPosition(pos);
+
+		// スプライトを反転
+		sprite2_->SetIsFlipX(isFlipped);
 	}
 }
 
@@ -92,7 +109,8 @@ void TitleScnce::Draw() {
 	// 例: 1280x720の青色背景
 	// KamataEngine::Sprite::DrawRect({0, 0}, {1280, 720}, {0.4f, 0.6f, 0.9f, 1.0f}); // RGBA
 
-	// タイトル画像（降下アニメーション位置で表示）
+	sprite_->Draw();
+
 	if (sprite2_) {
 		sprite2_->Draw();
 	}
