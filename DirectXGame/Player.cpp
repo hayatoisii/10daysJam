@@ -84,7 +84,7 @@ void Player::Update() {
 			SetOnGround(true);
 			inversion = true;
 			// gravity = -gravity; ← ここは削除
-			targetGravity = 0.07f; // 目標重力を上向きに
+			targetGravity = 0.05f; // 目標重力を上向きに
 			platformScrollSpeed = -fabs(platformScrollSpeed);
 		}
 	} else {
@@ -94,7 +94,7 @@ void Player::Update() {
 			SetOnGround(true);
 			inversion = false;
 			// gravity = -gravity; ← ここは削除
-			targetGravity = -0.07f; // 目標重力を下向きに
+			targetGravity = -0.05f; // 目標重力を下向きに
 			platformScrollSpeed = fabs(platformScrollSpeed);
 		}
 	}
