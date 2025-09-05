@@ -87,6 +87,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			// 注: GameSceneにIsGameOver()メソッドを実装する必要があります
 			if (gameScnce->IsGameOver()) {
 				scene = Scene::GameOver;
+				// 毎回表示できるように再初期化
+				gameOverScene->Initialize();
 			}
 			// ゲームクリアの条件が満たされたらゲームクリアシーンへ
 			// 注: GameSceneにIsGameClear()メソッドを実装する必要があります
@@ -132,6 +134,10 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			if (gameClearScene->IsReturnToTitle()) {
 				scene = Scene::Title;
 				titleScnce->Initialize();
+			}
+			// 遷移時の初期化（次回すぐ飛ばないように）
+			else if (gameScnce->IsGameClear()) {
+				gameClearScene->Initialize();
 			}
 			break;
 		}

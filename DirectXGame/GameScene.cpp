@@ -14,6 +14,25 @@ GameScene::~GameScene() {
 }
 
 void GameScene::Initialize() {
+	// 再初期化時のクリーンアップ
+	if (player_ != nullptr) {
+		delete player_;
+		player_ = nullptr;
+	}
+	for (auto platform : platforms_) {
+		delete platform;
+	}
+	platforms_.clear();
+	for (auto wt : hpWorldTransforms_) {
+		delete wt;
+	}
+	hpWorldTransforms_.clear();
+	isGameOver_ = false;
+	isGameClear_ = false;
+	platformSpawnTimer = 0.0f;
+	platformSideFlag = false;
+	lastPlatformX = 0.0f;
+	playerHP_ = 3;
 	// 乱数エンジンの初期化
 	std::random_device rd;
 	randomEngine_ = std::mt19937(rd());

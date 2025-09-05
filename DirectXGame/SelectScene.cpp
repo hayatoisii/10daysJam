@@ -6,6 +6,9 @@ void SelectScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
+	// タイトルから戻ってきたときの再初期化に備えてフラグをリセット
+	isGameStart_ = false;
+
 	textureHandle_ = KamataEngine::TextureManager::Load("select/1.png");
 	selectSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
 	selectSprite_->SetPosition({0, 0}); // 画面中央に配置

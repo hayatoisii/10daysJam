@@ -6,6 +6,9 @@ void GameOverScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
+	// タイトルに戻るフラグを毎回リセット
+	isReturnToTitle_ = false;
+
 	textureHandle_ = KamataEngine::TextureManager::Load("gameover/3.png"); // 適切なテクスチャに置き換えてください
 	gameOverSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
 	gameOverSprite_->SetPosition({0, 0});
