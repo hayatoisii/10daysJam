@@ -34,7 +34,10 @@ public:
 
 	void SetDamage(bool flag) { isDamage_ = flag; }
 
-	//void TakeDamage(const Vector3& playerPos);
+	// ダメージ処理を開始する関数
+	void OnDamage();
+	// 無敵状態かどうかを返す関数
+	bool IsInvincible() const;
 
 private:
 	// 足場のスクロール速度
@@ -75,6 +78,11 @@ private:
 	// ダメージ表示用
 	bool isDamage_ = false;
 	bool IsDamage() const { return isDamage_; }
+
+	// 無敵状態かどうかを示すフラグ
+	bool isInvincible_ = false;
+	// 無敵時間タイマー
+	float invincibilityTimer_ = 0.0f;
 
 	Model* model_ = nullptr;
 	Input* input_ = nullptr;

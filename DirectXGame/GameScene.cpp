@@ -2,12 +2,10 @@
 #include <random>
 
 GameScene::~GameScene() {
-	// 動的確保したオブジェクトの解放
 	delete player_;
 	for (auto platform : platforms_) {
 		delete platform;
 	}
-	// HPのワールドトランスフォームも解放する
 	for (auto wt : hpWorldTransforms_) {
 		delete wt;
 	}
@@ -23,19 +21,17 @@ void GameScene::Initialize() {
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
 	hpModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+	// 上下それぞれのダメージモデルを読み込む
+	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);       // 上向きダメージモデルのファイル名にしてください
+	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true); // 下向きダメージモデルのファイル名にしてください
 
 	// HPワールドトランスフォームを3個作成
 	for (int i = 0; i < playerHP_; i++) {
-		// WorldTransformをnewで動的確保し、ポインタを受け取る
 		WorldTransform* wt = new WorldTransform();
 		wt->Initialize();
-
-		// メンバへのアクセスはアロー演算子(->)を使う
 		wt->translation_ = {-18.0f + i * 2.0f, 18.0f, 0.0f};
 		wt->scale_ = {0.5f, 0.5f, 0.5f};
-
 		wt->UpdateMatarix();
-		// ポインタをベクターに追加
 		hpWorldTransforms_.push_back(wt);
 	}
 
@@ -58,26 +54,47 @@ void GameScene::Initialize() {
 	player_ = new Player();
 	player_->Initialize(modelPlayer_, &camera_, playerPos);
 
-	// 足場をランダムに初期生成
-	std::uniform_real_distribution<float> posX(-20.0f, 20.0f);
-	std::uniform_real_distribution<float> posY(-10.0f, 40.0f);
+	// --- 足場生成処理 ---
 
-	const int platformCount = 10; // 足場の数
-	for (int i = 0; i < platformCount; i++) {
-		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
+	// 1. プレイヤーの真下に安全な足場を1つ生成する
+	{
+		Platform* firstPlatform = new Platform();
+		Vector3 pos = {0.0f, -2.0f, 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
+		// Initializeに3種類のモデルを全て渡す
+		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+		firstPlatform->SetDamageDirection(DamageDirection::NONE); // 無害
+		platforms_.push_back(firstPlatform);
+	}
 
-		// 50% の確率で縦2倍サイズに変更
-		std::uniform_int_distribution<int> dist01(0, 1);
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f}; // 横はそのまま、縦だけ2倍
-			isDamage = true;            // ダメージ足場フラグON
-		}
+	// 2. 残りの足場をランダムに生成する
+	std::uniform_real_distribution<float> posX(-20.0f, 20.0f);
+	std::uniform_real_distribution<float> posY(0.0f, 40.0f);
+
+	for (int i = 0; i < platformCount - 1; i++) {
+		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
+		Vector3 scale = {1.5f, 1.2f, 1.0f}; // 通常スケール
 
 		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
+
+		// 50%の確率でダメージ足場を生成
+		std::uniform_int_distribution<int> dist01(0, 1);
+		if (dist01(randomEngine_) == 1) {
+			// ダメージ床の場合、スケールを1.5倍に変更
+			scale = {1.5f, 1.8f, 1.0f};
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+
+			// プレイヤーの重力方向に応じて危険な面を設定
+			if (player_->IsInversion()) {
+				platform->SetDamageDirection(DamageDirection::BOTTOM);
+			} else {
+				platform->SetDamageDirection(DamageDirection::TOP);
+			}
+		} else {
+			// 通常の足場
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			platform->SetDamageDirection(DamageDirection::NONE);
+		}
 		platforms_.push_back(platform);
 	}
 
@@ -85,35 +102,49 @@ void GameScene::Initialize() {
 	worldTransform.Initialize();
 }
 
+
 void GameScene::Update() {
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
+
+	// --- 足場生成ロジック ---
 	if (platformSpawnTimer >= platformSpawnInterval) {
 		platformSpawnTimer = 0.0f;
 
-		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
-		std::uniform_int_distribution<int> dist01(0, 1);
-
-		Vector3 pos;
-		if (player_->IsInversion()) {
-			pos = {posX(randomEngine_), 21.0f, 0.0f};
+		// X座標を左右交互の範囲で決める
+		float x;
+		if (platformSideFlag) {
+			std::uniform_real_distribution<float> posX(-20.0f, 0.0f);
+			x = posX(randomEngine_);
 		} else {
-			pos = {posX(randomEngine_), -20.0f, 0.0f};
+			std::uniform_real_distribution<float> posX(0.0f, 20.0f);
+			x = posX(randomEngine_);
 		}
+		platformSideFlag = !platformSideFlag;
 
+		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
-
-		// 50% の確率で縦サイズ2倍
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f};
-			isDamage = true;
-		}
 
 		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
+
+		// 50%の確率でダメージ足場を生成
+		std::uniform_int_distribution<int> dist01(0, 1);
+		if (dist01(randomEngine_) < 1) {
+			scale = {1.5f, 1.8f, 1.0f};
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+
+			// プレイヤーの重力方向に応じて危険な面を設定
+			if (player_->IsInversion()) {
+				platform->SetDamageDirection(DamageDirection::BOTTOM);
+			} else {
+				platform->SetDamageDirection(DamageDirection::TOP);
+			}
+		} else {
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			platform->SetDamageDirection(DamageDirection::NONE);
+		}
 		platforms_.push_back(platform);
+		lastPlatformX = x;
 	}
 
 	// プレイヤーの重力に応じたスクロール
@@ -128,7 +159,6 @@ void GameScene::Update() {
 	// 画面外の足場を削除
 	for (auto it = platforms_.begin(); it != platforms_.end();) {
 		Vector3 pos = (*it)->GetWorldPosition();
-
 		if (player_->IsInversion()) {
 			if (pos.y > 22.0f) {
 				delete *it;
@@ -145,45 +175,9 @@ void GameScene::Update() {
 		++it;
 	}
 
-	// 交互生成ロジック
-	if (platformSpawnTimer >= platformSpawnInterval) {
-		platformSpawnTimer = 0.0f;
-
-		float x;
-		if (platformSideFlag) {
-			// 左側範囲
-			std::uniform_real_distribution<float> posX(-20.0f, 0.0f);
-			x = posX(randomEngine_);
-		} else {
-			// 右側範囲
-			std::uniform_real_distribution<float> posX(0.0f, 20.0f);
-			x = posX(randomEngine_);
-		}
-		platformSideFlag = !platformSideFlag; // 毎回交互に切り替え
-
-		std::uniform_int_distribution<int> dist01(0, 1);
-
-		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
-
-		// 50% の確率で縦サイズ2倍
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f};
-			isDamage = true;
-		}
-
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
-		platforms_.push_back(platform);
-
-		lastPlatformX = x; // 必要なら記憶
-	}
-
 	player_->Update();
 
-	// 衝突判定
+	// --- 衝突判定 ---
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
@@ -192,61 +186,69 @@ void GameScene::Update() {
 			continue;
 		}
 
-		// プレイヤー中心とプラットフォーム中心の差
 		Vector3 playerPos = player_->GetPosition();
 		Vector3 platPos = platform->GetWorldPosition();
 
-		Vector3 overlap; // 重なり量
+		Vector3 overlap;
 		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
 		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
 
-		// 衝突解決（重なりが小さい方に押し戻す）
+		// 衝突解決
 		if (overlap.x < overlap.y) {
 			// 横衝突
 			if (playerPos.x < platPos.x) {
-				// 左からぶつかった
 				playerPos.x -= overlap.x;
 			} else {
-				// 右からぶつかった
 				playerPos.x += overlap.x;
 			}
 			player_->SetVelocityX(0.0f);
 		} else {
 			// 縦衝突
 			if (playerPos.y > platPos.y) {
-				// 上から着地
+				// 上から着地した場合
 				playerPos.y += overlap.y;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
+
+				// 足場の上面が危険な場合、ダメージを受ける
+				if (platform->GetDamageDirection() == DamageDirection::TOP) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
+				}
 			} else {
-				// 下からぶつかった
+				// 下からぶつかった場合
 				playerPos.y -= overlap.y;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
-			}
-		}
 
-		if (platform->IsDamage()) {
-			// プレイヤーにダメージ処理を通知
-		//	player_->TakeDamage(player_->GetPosition());
-		}
-
-		// 修正した座標を反映
-		player_->SetPosition(playerPos);
-
-		if (platform->IsDamage()) {
-			if (playerHP_ > 0) {
-				playerHP_--;
-
-				if (playerHP_ < (int)hpWorldTransforms_.size()) {
-					// アロー演算子(->)でメンバにアクセス
-					hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0}; // 消す代わりに縮小
-					hpWorldTransforms_[playerHP_]->UpdateMatarix();
+				// 足場の下面が危険な場合、ダメージを受ける
+				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
 				}
 			}
 		}
+		// 修正した座標を反映
+		player_->SetPosition(playerPos);
 	}
 }
+
 
 void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();

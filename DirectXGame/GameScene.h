@@ -40,8 +40,13 @@ private:
 
     int playerHP_ = 3;
 
+	const int platformCount = 1; // 足場の数
+
     // HP用モデル
-    KamataEngine::Model* hpModel_ = nullptr;
+    Model* hpModel_ = nullptr;
+
+	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
+	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
 
     // HP用ワールドトランスフォーム
 	std::vector<WorldTransform*> hpWorldTransforms_;

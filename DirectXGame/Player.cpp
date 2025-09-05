@@ -18,6 +18,17 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 }
 
 void Player::Update() {
+
+	// 無敵時間中の処理
+	if (isInvincible_) {
+		// タイマーをフレーム時間分だけ減らす (60FPS想定)
+		invincibilityTimer_ -= 1.0f / 60.0f;
+		// タイマーが0以下になったら無敵状態を解除
+		if (invincibilityTimer_ <= 0.0f) {
+			isInvincible_ = false;
+		}
+	}
+
 	velocityX_ = 0.0f;
 
 	// 左右移動
@@ -106,6 +117,16 @@ void Player::SetOnGround(bool flag) {
 }
 
 void Player::Draw() {
+
+	// 無敵状態なら点滅させる
+	if (isInvincible_) {
+		// タイマーの小数部分を利用して点滅を実現
+		if (fmodf(invincibilityTimer_, 0.2f) < 0.1f) {
+			// 一定周期で描画をスキップすることで点滅しているように見せる
+			return;
+		}
+	}
+
 	if (model_) {
 		model_->Draw(worldTransform_, *camera_);
 	}
@@ -118,7 +139,23 @@ void Player::SetPosition(const Vector3& pos) {
 
 float Player::GetGravity() const { return gravity; }
 
-//void Player::TakeDamage(const Vector3& playerPos) {
-//	// 中身をすべて削除、またはコメントアウトする
-//	// (playerPosは未使用になるので警告が出るかもしれませんが問題ありません)
-//}
+// ダメージ処理。GameSceneから呼ばれる
+void Player::OnDamage() {
+	// すでに無敵なら何もしない
+	if (isInvincible_) {
+		return;
+	}
+
+	// 無敵状態にしてタイマーをセット
+	isInvincible_ = true;
+	invincibilityTimer_ = 1.5f; // 1.5秒間の無敵時間
+}
+
+// 外部から無敵状態か問い合わせるための関数
+bool Player::IsInvincible() const { return isInvincible_; }
+
+// SetDamageをSetDamageDirectionに変更
+void Platform::SetDamageDirection(DamageDirection direction) { damageDirection_ = direction; }
+
+// IsDamageをGetDamageDirectionに変更
+DamageDirection Platform::GetDamageDirection() const { return damageDirection_; }

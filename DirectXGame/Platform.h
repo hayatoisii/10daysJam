@@ -5,9 +5,16 @@
 
 using namespace KamataEngine;
 
+// どの面が危険かを示す列挙型を定義
+enum class DamageDirection {
+	NONE,   // 無害
+	TOP,    // 上面が危険
+	BOTTOM, // 下面が危険
+};
+
 class Platform {
 public:
-	void Initialize(const Vector3& pos, const Vector3& size, Model* model, Camera* camera);
+	void Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Camera* camera);
 	void Update();
 	void Draw();
 
@@ -19,6 +26,11 @@ public:
 
 	 bool IsDamage() const { return isDamage_; }
 	 void SetDamage(bool flag) { isDamage_ = flag; }
+
+	 // SetDamageをSetDamageDirectionに変更
+	 void SetDamageDirection(DamageDirection direction);
+	 // IsDamageをGetDamageDirectionに変更
+	 DamageDirection GetDamageDirection() const;
 
 private:
 
@@ -33,4 +45,12 @@ private:
 	Vector3 baseSize_ = {5.0f, 2.5f, 0.15f};
 	Vector3 scale_ = {1.0f, 1.0f, 1.0f};
 	AABB aabb_;
+
+	Model* normalModel_ = nullptr;
+	// ★変更：ダメージモデルを2つに分ける
+	Model* damageTopModel_ = nullptr;
+	Model* damageBottomModel_ = nullptr;
+
+	DamageDirection damageDirection_ = DamageDirection::NONE; 
+
 };

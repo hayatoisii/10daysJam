@@ -1,18 +1,18 @@
 #include "Platform.h"
 
 // プラットフォームの初期化
-void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* model, Camera* camera) {
+void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Camera* camera) {
 	worldTransform_.Initialize();
-	worldTransform_.translation_ = pos; // 位置設定
-	worldTransform_.scale_ = scale;     // スケール設定
-	model_ = model;
-	camera_ = camera;
-	scale_ = scale;
+	worldTransform_.translation_ = pos;
+	worldTransform_.scale_ = scale;
+	worldTransform_.UpdateMatarix();
+	aabb_.Set(pos - (scale / 2.0f), pos + (scale / 2.0f));
+	this->camera_ = camera;
 
-	// AABB（当たり判定ボックス）初期化
-	// 基準サイズにスケールを乗算し半分のサイズを計算
-	Vector3 halfSize = (baseSize_ * scale_) * 0.5f;
-	aabb_.Set(pos - halfSize, pos + halfSize);
+	// 3つのモデルへのポインタを保持
+	this->normalModel_ = normalModel;
+	this->damageTopModel_ = damageTopModel;
+	this->damageBottomModel_ = damageBottomModel;
 }
 
 // スクロール速度の設定
@@ -35,9 +35,31 @@ void Platform::Update() {
 	worldTransform_.UpdateMatarix();
 }
 
-// プラットフォームの描画
+// Platform.cpp
+
 void Platform::Draw() {
-	if (model_) {
-		model_->Draw(worldTransform_, *camera_);
+	// どのモデルを描画するかを damageDirection_ に基づいて決定する
+	switch (damageDirection_) {
+	case DamageDirection::TOP:
+		// 上面が危険な場合 -> 上向きダメージモデルを描画
+		if (damageTopModel_) {
+			damageTopModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
+
+	case DamageDirection::BOTTOM:
+		// 下面が危険な場合 -> 下向きダメージモデルを描画
+		if (damageBottomModel_) {
+			damageBottomModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
+
+	case DamageDirection::NONE:
+	default:
+		// 無害な場合 -> 通常モデルを描画
+		if (normalModel_) {
+			normalModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
 	}
 }
