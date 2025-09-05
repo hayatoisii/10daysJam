@@ -20,7 +20,7 @@ void GameScene::Initialize() {
 
 	// モデルの読み込み
 	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
-	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
+	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("Platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
 	hpModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 
@@ -86,35 +86,8 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
-	// 足場の生成タイミング管理
+	// 足場の生成タイミング管理（交互生成に一本化）
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
-	if (platformSpawnTimer >= platformSpawnInterval) {
-		platformSpawnTimer = 0.0f;
-
-		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
-		std::uniform_int_distribution<int> dist01(0, 1);
-
-		Vector3 pos;
-		if (player_->IsInversion()) {
-			pos = {posX(randomEngine_), 21.0f, 0.0f};
-		} else {
-			pos = {posX(randomEngine_), -20.0f, 0.0f};
-		}
-
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
-
-		// 50% の確率で縦サイズ2倍
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f};
-			isDamage = true;
-		}
-
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
-		platforms_.push_back(platform);
-	}
 
 	// プレイヤーの重力に応じたスクロール
 	float gravity = player_->GetGravity();
@@ -188,7 +161,8 @@ void GameScene::Update() {
 		isGameOver_ = true;
 	}
 
-	if (player_->GetPosition().y > 50.0f) { // 適切な値に置き換えてください
+	// プレイヤーが上端へ到達したらクリア（到達可能な閾値に修正）
+	if (player_->IsInversion() && player_->GetPosition().y >= 18.0f) {
 		isGameClear_ = true;
 	}
 

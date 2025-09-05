@@ -80,14 +80,26 @@ private:
 	uint32_t voiceHandle_ = 0;
 	uint32_t voiceHandle2_ = 0;
 
-	float sprite2MoveSpeed = 5.0f;         // sprites[1]の移動速度
-	bool isMovingDown = false;             // 下に移動中か否か
-	bool isFlipped = false;                // スプライトが反転しているか否か
-	float animationTimer = 0.0f;           // アニメーション用のタイマー
-	const float FLIP_THRESHOLD = -100.0f;  // 反転を開始するY座標の閾値 (例: 中央)
-	const float SCREEN_EDGE_Y = -100.0f;   // 画面上端のY座標 (画面外)
-	const float SCREEN_BOTTOM_Y = 1280.0f; // 画面下端のY座標 (画面外)
+	float sprite2MoveSpeed = 2.0f; // 移動速度
+	bool isMovingDown = false;     // 下に移動中か否か
+	bool isFlipped = false;        // スプライトが反転しているか否か
+	float animationTimer = 0.0f;   // アニメーション用のタイマー
+
+	// 画面中央付近での上下移動に調整（1280x720想定）
+	const float FLIP_THRESHOLD = 150.0f;  // 上端での反転位置
+	const float SCREEN_EDGE_Y = -400.0f;   // 画面上端付近
+	const float SCREEN_BOTTOM_Y = 400.0f; // 画面下端付近
 
 	// スプライト2用のワールドトランスフォーム
 	KamataEngine::WorldTransform sprite2WorldTransform_;
+
+	// イージング用の変数
+	bool isFlipping = false;   // 反転アニメーション中か
+	float flipProgress = 0.0f; // 反転の進行度 (0.0f～1.0f)
+	float flipDuration = 0.3f; // 反転にかける時間（秒）
+	float currentScale = 1.0f; // 現在のスケール値
+
+	// イージング関数
+	float EaseInOutQuad(float t);
+	float EaseOutBounce(float t);
 };

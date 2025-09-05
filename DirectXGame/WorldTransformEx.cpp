@@ -1,7 +1,7 @@
 #include <KamataEngine.h>
 
 using namespace KamataEngine;
-using namespace MathUtility;
+using namespace KamataEngine::MathUtility;
 
 void WorldTransform::UpdateMatarix() {
 

@@ -15,8 +15,6 @@ void GameClearScene::Update() {
 	// 修正後
 	if (input_->TriggerKey(DIK_RETURN)) {
 		isReturnToTitle_ = true;
-		// ★追加：タイトルに戻るフラグをリセット
-		isReturnToTitle_ = false;
 	}
 }
 
