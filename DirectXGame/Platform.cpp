@@ -15,6 +15,8 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* model
 	aabb_.Set(pos - halfSize, pos + halfSize);
 }
 
+
+
 // スクロール速度の設定
 void Platform::SetScrollSpeed(float speed) { platformScrollSpeed = speed; }
 

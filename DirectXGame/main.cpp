@@ -1,41 +1,66 @@
-#include "KamataEngine.h"
-#include <Windows.h>
 #include "GameScene.h"
+#include "KamataEngine.h"
+#include "TitleScnce.h"
 #include <Windows.h>
 
 using namespace KamataEngine;
 
+// ファイル先頭付近に追加
+enum class Scene { Title, Game };
+
+Scene scene = Scene::Title;
+
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
-	KamataEngine::Initialize(L"LE3C_01_イシイ_ハヤト");
+	// 初期化処理
+	//  // エンジンの初期化
 
-	// DirectXCommonインスタンスの取得
+	KamataEngine::Initialize(L"LE3C_26_ムラタ_トモキ");
+
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	GameScene* gameScene = new GameScene();
-	gameScene->Initialize();
+	// main関数の前に
+	TitleScnce* titleScnce = nullptr;
 
+	// タイトルシーンの初期化
+	titleScnce = new TitleScnce();
+	titleScnce->Initialize();
+
+	GameScene* gameScnce = new GameScene();
+	gameScnce->Initialize();
+
+	// メインループ
 	while (true) {
+
 		if (KamataEngine::Update()) {
 			break;
 		}
 
-		gameScene->Update();
-
-		// 描画開始
 		dxCommon->PreDraw();
 
-		gameScene->Draw();
+		// シーンごとに処理を分岐
+		if (scene == Scene::Title) {
+			titleScnce->Update();
+			titleScnce->Draw();
+			if (titleScnce->IsSelectFinished()) {
+				scene = Scene::Game;
+			}
+		} else if (scene == Scene::Game) {
+			gameScnce->Update();
+			gameScnce->Draw();
+		}
 
-		// 描画終了
 		dxCommon->PostDraw();
 	}
 
-	delete gameScene;
-	gameScene = nullptr;
+	delete gameScnce;
+	gameScnce = nullptr;
+	delete titleScnce;
+	titleScnce = nullptr;
+	// ここでゲームシーンの終了処理を行う
 
+	// 終了処理
 	KamataEngine::Finalize();
-
 	return 0;
 }
