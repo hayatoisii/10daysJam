@@ -19,9 +19,15 @@ public:
 	void Draw();
 
 private:
+	// プレイヤーのX軸移動範囲を可視化するモデル
 	KamataEngine::Model* modelEnd_ = nullptr;
 	WorldTransform endTransformLeft_;
 	WorldTransform endTransformRight_;
+
+	// 重力反転ライン用
+	KamataEngine::Model* modelGravityLine_ = nullptr;
+	WorldTransform gravityLineTop_;
+	WorldTransform gravityLineBottom_;
 
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 0.0f;
@@ -33,8 +39,11 @@ private:
 	bool platformSideFlag = false;
 
 	// プラットフォーム生成間隔（秒）
-	const float platformSpawnInterval = 1.2f;
+	const float platformSpawnInterval = 1.0f;
 
+	// ゲーム時間と速度倍率
+	float gameTime_ = 0.0f;
+	float speedMultiplier_ = 1.0f;
 
 	const float minPlatformDistance = 4.0f;
 

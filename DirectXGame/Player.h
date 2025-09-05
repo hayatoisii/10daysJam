@@ -67,6 +67,11 @@ private:
 
 	float targetGravity = -0.06f; // 目標重力
 	float gravityLerpSpeed = 0.07f;
+	
+	// 重力切り替え後の一時的な低重力システム
+	bool isGravityTransitioning_ = false; // 重力切り替え中フラグ
+	float transitionGravity_ = -0.02f; // 切り替え後の低重力
+	float normalGravity_ = -0.07f; // 通常重力
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;

@@ -35,6 +35,9 @@ void GameScene::Initialize() {
 		hpWorldTransforms_.push_back(wt);
 	}
 
+	// プレイヤーのX軸移動範囲を可視化するモデル
+	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
+
 	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-22.3f, 0.0f, 0.0f);
@@ -45,6 +48,22 @@ void GameScene::Initialize() {
 
 	endTransformLeft_.UpdateMatarix();
 	endTransformRight_.UpdateMatarix();
+
+	// 重力反転ライン用のcubeモデルを読み込み
+	modelGravityLine_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+
+	// 上ライン（Y=25）に配置
+	gravityLineTop_.Initialize();
+	gravityLineTop_.translation_ = Vector3(0.0f, 15.0f, 0.0f);
+	gravityLineTop_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
+
+	// 下ライン（Y=-25）に配置
+	gravityLineBottom_.Initialize();
+	gravityLineBottom_.translation_ = Vector3(0.0f, -15.0f, 0.0f);
+	gravityLineBottom_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
+
+	gravityLineTop_.UpdateMatarix();
+	gravityLineBottom_.UpdateMatarix();
 
 	// カメラ初期化
 	camera_.Initialize();
@@ -90,6 +109,11 @@ void GameScene::Initialize() {
 			} else {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
+			// ダメージ足場の当たり判定を少しだけ上に（小さめ）+ 高さを薄く
+			platform->SetDamageColliderYOffset(0.05f);
+			platform->SetDamageColliderScaleY(0.7f);
+			// 安全側（ダメージじゃない方）を少し小さく
+			platform->SetSafeSideScaleY(0.8f);
 		} else {
 			// 通常の足場
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
@@ -103,6 +127,15 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
+	// ゲーム時間の更新
+	gameTime_ += 1.0f / 60.0f; // 60FPS想定
+	
+	// 速度倍率の計算（30秒ごとに0.1倍増加、最大3.0倍）
+	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.1f;
+	if (speedMultiplier_ > 3.0f) {
+		speedMultiplier_ = 3.0f;
+	}
+	
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
 
@@ -138,6 +171,10 @@ void GameScene::Update() {
 			} else {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
+			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
+			platform->SetDamageColliderScaleY(1.3f);
+			// 安全側（ダメージじゃない方）を少し小さく
+			platform->SetSafeSideScaleY(0.8f);
 		} else {
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 			platform->SetDamageDirection(DamageDirection::NONE);
@@ -146,9 +183,10 @@ void GameScene::Update() {
 		lastPlatformX = x;
 	}
 
-	// プレイヤーの重力に応じたスクロール
+	// プレイヤーの重力に応じたスクロール（速度倍率を適用）
 	float gravity = player_->GetGravity();
-	float scrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
+	float baseScrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
+	float scrollSpeed = baseScrollSpeed * speedMultiplier_;
 
 	for (auto platform : platforms_) {
 		platform->SetScrollSpeed(scrollSpeed);
@@ -205,7 +243,12 @@ void GameScene::Update() {
 			// 縦衝突
 			if (playerPos.y > platPos.y) {
 				// 上から着地した場合
-				playerPos.y += overlap.y;
+				// プレイヤーの底辺を足場の上面に正確に配置
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				Vector3 platformSize = platformAABB.GetMax() - platformAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				//float platformHalfHeight = platformSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f; // 完全に上に配置
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
 
@@ -224,7 +267,12 @@ void GameScene::Update() {
 				}
 			} else {
 				// 下からぶつかった場合
-				playerPos.y -= overlap.y;
+				// プレイヤーの上辺を足場の下面に正確に配置
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				Vector3 platformSize = platformAABB.GetMax() - platformAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				//float platformHalfHeight = platformSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f; // 完全に下に配置
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
 
@@ -269,9 +317,16 @@ void GameScene::Draw() {
 	// プレイヤーを描画
 	player_->Draw();
 
+	// プレイヤーのX軸移動範囲を可視化
 	if (modelEnd_) {
 		modelEnd_->Draw(endTransformLeft_, camera_);
 		modelEnd_->Draw(endTransformRight_, camera_);
+	}
+
+	// 重力反転ラインを描画
+	if (modelGravityLine_) {
+		modelGravityLine_->Draw(gravityLineTop_, camera_);
+		modelGravityLine_->Draw(gravityLineBottom_, camera_);
 	}
 
 	// HP描画
