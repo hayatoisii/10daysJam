@@ -9,6 +9,7 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* model
 	camera_ = camera;
 	scale_ = scale;
 
+
 	// AABB（当たり判定ボックス）初期化
 	// 基準サイズにスケールを乗算し半分のサイズを計算
 	Vector3 halfSize = (baseSize_ * scale_) * 0.5f;
