@@ -7,6 +7,10 @@ GameScene::~GameScene() {
 	for (auto platform : platforms_) {
 		delete platform;
 	}
+	// HPのワールドトランスフォームも解放する
+	for (auto wt : hpWorldTransforms_) {
+		delete wt;
+	}
 }
 
 void GameScene::Initialize() {
@@ -18,8 +22,24 @@ void GameScene::Initialize() {
 	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
+	hpModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 
-    // 左端（-20, 0, 0）に配置
+	// HPワールドトランスフォームを3個作成
+	for (int i = 0; i < playerHP_; i++) {
+		// WorldTransformをnewで動的確保し、ポインタを受け取る
+		WorldTransform* wt = new WorldTransform();
+		wt->Initialize();
+
+		// メンバへのアクセスはアロー演算子(->)を使う
+		wt->translation_ = {-18.0f + i * 2.0f, 18.0f, 0.0f};
+		wt->scale_ = {0.5f, 0.5f, 0.5f};
+
+		wt->UpdateMatarix();
+		// ポインタをベクターに追加
+		hpWorldTransforms_.push_back(wt);
+	}
+
+	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-22.3f, 0.0f, 0.0f);
 
@@ -46,9 +66,18 @@ void GameScene::Initialize() {
 	for (int i = 0; i < platformCount; i++) {
 		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		bool isDamage = false;
+
+		// 50% の確率で縦2倍サイズに変更
+		std::uniform_int_distribution<int> dist01(0, 1);
+		if (dist01(randomEngine_) == 1) {
+			scale = {1.5f, 2.4f, 1.0f}; // 横はそのまま、縦だけ2倍
+			isDamage = true;            // ダメージ足場フラグON
+		}
 
 		Platform* platform = new Platform();
 		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 	}
 
@@ -63,6 +92,7 @@ void GameScene::Update() {
 		platformSpawnTimer = 0.0f;
 
 		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
+		std::uniform_int_distribution<int> dist01(0, 1);
 
 		Vector3 pos;
 		if (player_->IsInversion()) {
@@ -72,8 +102,17 @@ void GameScene::Update() {
 		}
 
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		bool isDamage = false;
+
+		// 50% の確率で縦サイズ2倍
+		if (dist01(randomEngine_) == 1) {
+			scale = {1.5f, 2.4f, 1.0f};
+			isDamage = true;
+		}
+
 		Platform* platform = new Platform();
 		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 	}
 
@@ -106,6 +145,7 @@ void GameScene::Update() {
 		++it;
 	}
 
+	// 交互生成ロジック
 	if (platformSpawnTimer >= platformSpawnInterval) {
 		platformSpawnTimer = 0.0f;
 
@@ -121,23 +161,29 @@ void GameScene::Update() {
 		}
 		platformSideFlag = !platformSideFlag; // 毎回交互に切り替え
 
+		std::uniform_int_distribution<int> dist01(0, 1);
+
 		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		bool isDamage = false;
+
+		// 50% の確率で縦サイズ2倍
+		if (dist01(randomEngine_) == 1) {
+			scale = {1.5f, 2.4f, 1.0f};
+			isDamage = true;
+		}
+
 		Platform* platform = new Platform();
 		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 
 		lastPlatformX = x; // 必要なら記憶
 	}
 
-	// =====================
-	// プレイヤー更新
-	// =====================
 	player_->Update();
 
-	// =====================
-	// 衝突判定（横 + 縦 全部ここで処理）
-	// =====================
+	// 衝突判定
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
@@ -180,8 +226,25 @@ void GameScene::Update() {
 			}
 		}
 
+		if (platform->IsDamage()) {
+			// プレイヤーにダメージ処理を通知
+		//	player_->TakeDamage(player_->GetPosition());
+		}
+
 		// 修正した座標を反映
 		player_->SetPosition(playerPos);
+
+		if (platform->IsDamage()) {
+			if (playerHP_ > 0) {
+				playerHP_--;
+
+				if (playerHP_ < (int)hpWorldTransforms_.size()) {
+					// アロー演算子(->)でメンバにアクセス
+					hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0}; // 消す代わりに縮小
+					hpWorldTransforms_[playerHP_]->UpdateMatarix();
+				}
+			}
+		}
 	}
 }
 
@@ -209,6 +272,14 @@ void GameScene::Draw() {
 	if (modelEnd_) {
 		modelEnd_->Draw(endTransformLeft_, camera_);
 		modelEnd_->Draw(endTransformRight_, camera_);
+	}
+
+	// HP描画
+	for (int i = 0; i < playerHP_; i++) {
+		if (i < (int)hpWorldTransforms_.size()) {
+			// ポインタを間接参照(*)してオブジェクトを渡す
+			hpModel_->Draw(*hpWorldTransforms_[i], camera_);
+		}
 	}
 
 	// 3D描画終了処理

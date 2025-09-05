@@ -17,9 +17,14 @@ public:
 
 	 Vector3 GetWorldPosition() const;
 
+	 bool IsDamage() const { return isDamage_; }
+	 void SetDamage(bool flag) { isDamage_ = flag; }
+
 private:
 
 	float platformScrollSpeed = 0.2f; // 足場の上方向移動速度
+
+	bool isDamage_ = false; 
 
 	WorldTransform worldTransform_;
 	Model* model_ = nullptr;

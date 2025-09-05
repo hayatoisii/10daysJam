@@ -32,6 +32,10 @@ public:
 
 	void SetOnGround(bool flag);
 
+	void SetDamage(bool flag) { isDamage_ = flag; }
+
+	//void TakeDamage(const Vector3& playerPos);
+
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -67,6 +71,10 @@ private:
 
 	bool isJumping_ = false;
 	bool inversion = false;
+
+	// ダメージ表示用
+	bool isDamage_ = false;
+	bool IsDamage() const { return isDamage_; }
 
 	Model* model_ = nullptr;
 	Input* input_ = nullptr;

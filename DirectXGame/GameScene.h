@@ -38,17 +38,25 @@ private:
 
 	const float minPlatformDistance = 4.0f;
 
+    int playerHP_ = 3;
+
+    // HP用モデル
+    KamataEngine::Model* hpModel_ = nullptr;
+
+    // HP用ワールドトランスフォーム
+	std::vector<WorldTransform*> hpWorldTransforms_;
+
 	// プレイヤーオブジェクトへのポインタ
 	Player* player_ = nullptr;
 
 	// プレイヤーモデル
-	KamataEngine::Model* modelPlayer_ = nullptr;
+	Model* modelPlayer_ = nullptr;
 
 	// プラットフォームモデル
-	KamataEngine::Model* modelPlatform_ = nullptr;
+	Model* modelPlatform_ = nullptr;
 
 	// カメラ
-	KamataEngine::Camera camera_;
+	Camera camera_;
 
 	// ワールド変換（汎用）
 	WorldTransform worldTransform;

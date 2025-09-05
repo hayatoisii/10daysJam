@@ -8,7 +8,9 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 	model_ = model;
 	camera_ = camera;
 	worldTransform_.translation_ = pos;
+	// modelDamage_ の読み込みを削除
 	input_ = KamataEngine::Input::GetInstance();
+	// damageTransform_.Initialize(); を削除
 	worldTransform_.Initialize();
 
 	// 初期AABB
@@ -115,3 +117,8 @@ void Player::SetPosition(const Vector3& pos) {
 }
 
 float Player::GetGravity() const { return gravity; }
+
+//void Player::TakeDamage(const Vector3& playerPos) {
+//	// 中身をすべて削除、またはコメントアウトする
+//	// (playerPosは未使用になるので警告が出るかもしれませんが問題ありません)
+//}
