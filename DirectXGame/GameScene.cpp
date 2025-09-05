@@ -183,6 +183,15 @@ void GameScene::Update() {
 
 	player_->Update();
 
+	// HP減少の衝突判定後、HPが0以下になったらゲームオーバーフラグを立てる
+	if (playerHP_ <= 0) {
+		isGameOver_ = true;
+	}
+
+	if (player_->GetPosition().y > 50.0f) { // 適切な値に置き換えてください
+		isGameClear_ = true;
+	}
+
 	// 衝突判定
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();

@@ -1,0 +1,31 @@
+#include "SelectScene.h"
+
+SelectScene::~SelectScene() { delete selectSprite_; }
+
+void SelectScene::Initialize() {
+	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
+	input_ = KamataEngine::Input::GetInstance();
+
+	textureHandle_ = KamataEngine::TextureManager::Load("select.png");
+	selectSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
+	selectSprite_->SetPosition({640, 360}); // 画面中央に配置
+}
+
+void SelectScene::Update() {
+	// Enterキーが押されたらゲーム開始
+	if (input_->TriggerKey(DIK_RETURN)) {
+		isGameStart_ = true;
+	}
+}
+
+void SelectScene::Draw() {
+	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
+
+	KamataEngine::Sprite::PreDraw(commandList);
+
+	if (selectSprite_) {
+		selectSprite_->Draw();
+	}
+
+	KamataEngine::Sprite::PostDraw();
+}
