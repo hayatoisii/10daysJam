@@ -6,15 +6,17 @@ void GameClearScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
-	textureHandle_ = KamataEngine::TextureManager::Load("gameclear.png"); // 適切なテクスチャに置き換えてください
+	textureHandle_ = KamataEngine::TextureManager::Load("gameclear/2.png"); // 適切なテクスチャに置き換えてください
 	gameClearSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
-	gameClearSprite_->SetPosition({640, 360});
+	gameClearSprite_->SetPosition({0, 0});
 }
 
 void GameClearScene::Update() {
-	// Enterキーが押されたらタイトルに戻る
+	// 修正後
 	if (input_->TriggerKey(DIK_RETURN)) {
 		isReturnToTitle_ = true;
+		// ★追加：タイトルに戻るフラグをリセット
+		isReturnToTitle_ = false;
 	}
 }
 

@@ -6,9 +6,9 @@ void SelectScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
-	textureHandle_ = KamataEngine::TextureManager::Load("select.png");
+	textureHandle_ = KamataEngine::TextureManager::Load("select/1.png");
 	selectSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
-	selectSprite_->SetPosition({640, 360}); // 画面中央に配置
+	selectSprite_->SetPosition({0, 0}); // 画面中央に配置
 }
 
 void SelectScene::Update() {

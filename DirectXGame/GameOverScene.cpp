@@ -6,15 +6,18 @@ void GameOverScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
-	textureHandle_ = KamataEngine::TextureManager::Load("gameover.png"); // 適切なテクスチャに置き換えてください
+	textureHandle_ = KamataEngine::TextureManager::Load("gameover/3.png"); // 適切なテクスチャに置き換えてください
 	gameOverSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
-	gameOverSprite_->SetPosition({640, 360});
+	gameOverSprite_->SetPosition({0, 0});
 }
 
 void GameOverScene::Update() {
-	// Enterキーが押されたらタイトルに戻る
+
+	// 修正後
 	if (input_->TriggerKey(DIK_RETURN)) {
 		isReturnToTitle_ = true;
+		// ★追加：タイトルに戻るフラグをリセット
+		isReturnToTitle_ = false;
 	}
 }
 

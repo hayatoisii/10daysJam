@@ -29,6 +29,7 @@ void TitleScnce::Initialize() {
 	Camera_.Initialize();
 
 	Timer_ = 0.0f;
+	isFinished_ = false;
 
 	// タイトルを中央に寄せるために調整
 	titleWorldTransform_.translation_ = {0.0f, 0.0f, 0.0f}; // x, y, zの値を調整

@@ -6,9 +6,9 @@ void PauseMenu::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
-	textureHandle_ = KamataEngine::TextureManager::Load("pause.png"); // 適切なテクスチャに置き換えてください
+	textureHandle_ = KamataEngine::TextureManager::Load("pause/4.png"); // 適切なテクスチャに置き換えてください
 	pauseSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
-	pauseSprite_->SetPosition({640, 360});
+	pauseSprite_->SetPosition({0, 0});
 
 	isResume_ = false;
 	isQuit_ = false;
