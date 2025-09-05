@@ -5,6 +5,8 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* norma
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = pos;
 	worldTransform_.scale_ = scale;
+	// Keep an internal copy of scale for AABB updates
+	scale_ = scale;
 	worldTransform_.UpdateMatarix();
 	aabb_.Set(pos - (scale / 2.0f), pos + (scale / 2.0f));
 	this->camera_ = camera;

@@ -102,7 +102,6 @@ void GameScene::Initialize() {
 	worldTransform.Initialize();
 }
 
-
 void GameScene::Update() {
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
@@ -248,7 +247,6 @@ void GameScene::Update() {
 		player_->SetPosition(playerPos);
 	}
 }
-
 
 void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();

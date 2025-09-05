@@ -42,7 +42,7 @@ private:
 	Model* model_ = nullptr;
 	Camera* camera_ = nullptr;
 
-	Vector3 baseSize_ = {7.0f, 2.5f, 0.15f};
+	Vector3 baseSize_ = {5.0f, 2.5f, 0.15f};
 	Vector3 scale_ = {1.0f, 1.0f, 1.0f};
 	AABB aabb_;
 

@@ -44,7 +44,7 @@ private:
 	float platformScrollSpeed = 0.2f;
 
 	// 横移動速度
-	const float speed = 0.6f;
+	const float speed = 0.4f;
 
 	// 落下速度の上限
 	const float maxFallSpeed = 1.0f;
@@ -53,7 +53,7 @@ private:
 	float gravity = -0.07f;
 
 	// ジャンプ初速度
-	const float jumpPower = 1.3f;
+	const float jumpPower = 0.9f;
 
 	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
 	const float minPlatformX = -20.0f; // 左端
