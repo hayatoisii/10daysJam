@@ -38,7 +38,7 @@ void BIt_Map_Font::Initialize() {
 	float mPositionX = 1064.0f + (kFontSize.x * kNumDigits) + -5.0f; // 5.0fは数字との間隔
 
 	//    Y座標: 数字の上下中央に配置されるように調整
-	float mPositionY = 10.0f + (kFontSize.y - mSize) / 2.0f;
+	float mPositionY = 16.0f + (kFontSize.y - mSize) / 2.0f;
 
 	mSprite_->SetPosition({mPositionX, mPositionY});
 

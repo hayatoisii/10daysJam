@@ -15,9 +15,22 @@ void GameOverScene::Initialize() {
 }
 
 void GameOverScene::Update() {
+	// ▼▼▼ コントローラー入力の判定を追加 ▼▼▼
+	XINPUT_STATE xInputState = {};
+	XINPUT_STATE xInputStatePrev = {};
+	bool isControllerConnected = input_->GetJoystickState(0, xInputState) && input_->GetJoystickStatePrevious(0, xInputStatePrev);
 
-	// 修正後
-	if (input_->TriggerKey(DIK_RETURN)) {
+	bool isConfirmTriggered = false;
+	if (isControllerConnected) {
+		// AボタンまたはSTARTボタンが押された瞬間
+		if (((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_A) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_A)) ||
+		    ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_START) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_START))) {
+			isConfirmTriggered = true;
+		}
+	}
+
+	// Enterキーまたはコントローラーの決定ボタンでタイトルへ戻る
+	if (input_->TriggerKey(DIK_RETURN) || isConfirmTriggered) {
 		isReturnToTitle_ = true;
 	}
 }
