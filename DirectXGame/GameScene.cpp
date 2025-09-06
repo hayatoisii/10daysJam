@@ -312,6 +312,8 @@ void GameScene::Update() {
 
 	player_->Update();
 
+	player_->SetOnGround(false);
+
 	// --- 衝突判定 ---
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
@@ -426,6 +428,30 @@ void GameScene::Update() {
 		}
 		player_->SetPosition(playerPos);
 	}
+	// ▼▼▼ ここから修正・追加 ▼▼▼
+	// HPが0以下になったらゲームオーバーフラグを立てる
+	if (playerHP_ <= 0) {
+		// isGameOver_ = true;
+	}
+	// ▲▲▲ ここまで修正・追加 ▲▲▲
+	// プレイヤーの現在位置
+	Vector3 currentPlayerPos = player_->GetPosition();
+
+	// 落下・ジャンプ中か判定
+	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+
+	// Y座標が変化している場合のみスコア加算
+	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+		score_++;
+	}
+
+	prevPlayerPos_ = currentPlayerPos;
+	prevOnGround_ = player_->IsOnGround();
+
+	if (score_ != prevScore_) {
+		font_->Set(score_);
+		prevScore_ = score_;
+	}
 }
 
 void GameScene::Draw() {
@@ -470,11 +496,14 @@ void GameScene::Draw() {
 		modelEnd_->Draw(endTransformLeft_, camera_);
 		modelEnd_->Draw(endTransformRight_, camera_);
 	}
-	for (int i = 0; i < playerHP_; i++) {
+
+	for (int i = 0; i < (int)hpWorldTransforms_.size(); i++) {
 		if (i < (int)hpWorldTransforms_.size()) {
+			// ポインタを間接参照(*)してオブジェクトを渡す
 			hpModel_->Draw(*hpWorldTransforms_[i], camera_);
 		}
 	}
+
 	font_->Draw();
 
 	Model::PostDraw();

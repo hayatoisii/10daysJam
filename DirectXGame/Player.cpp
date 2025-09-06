@@ -49,9 +49,18 @@ void Player::Update() {
 		worldTransform_.translation_.x = maxPlatformX;
 	}
 
-	// ジャンプ
+    // ジャンプ
 	if (input_->TriggerKey(DIK_SPACE)) {
 		if (jumpCount_ < maxJumpCount_) {
+
+			// ▼▼▼ ここからが追加・修正部分 ▼▼▼
+			// もし空中で、かつジャンプ回数が0回（つまり落下してきただけ）なら、
+			// このジャンプを2段目として扱うために、回数を強制的に1にする。
+			if (!isOnGround_ && jumpCount_ == 0) {
+				jumpCount_ = 1;
+			}
+			// ▲▲▲ -------------------------- ▲▲▲
+
 			velocityY_ = inversion ? -jumpPower : jumpPower;
 			isJumping_ = true;
 			jumpCount_++;
@@ -108,11 +117,12 @@ void Player::Update() {
 }
 
 void Player::SetOnGround(bool flag) {
+
+	isOnGround_ = flag;
+
+	// もし地面にいる状態になったのなら、ジャンプ回数をリセット
 	if (flag) {
-		isJumping_ = false;
-		jumpCount_ = 0; // ★着地時にジャンプ回数リセット
-	} else {
-		isJumping_ = true;
+		jumpCount_ = 0;
 	}
 }
 
