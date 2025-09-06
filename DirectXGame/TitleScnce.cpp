@@ -57,10 +57,10 @@ void TitleScnce::Initialize() {
 
 	InitializeSprites();
 
-	// 天球の初期化
-	modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
-	skydome_ = new Skydome();
-	skydome_->Initialize(modelSkydome_, &camera_);
+	//// 天球の初期化
+	//modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
+	//skydome_ = new Skydome();
+	//skydome_->Initialize(modelSkydome_, &camera_);
 }
 
 void TitleScnce::InitializeSprites() {
@@ -78,136 +78,224 @@ void TitleScnce::Update() {
 
 	Timer_ += 1.0f;
 
+		// Enterキーでタイトル終了
 	if (input_->TriggerKey(DIK_RETURN)) {
 		isFinished_ = true;
-	}
-
-		// 足場の生成タイミング管理
-	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
-	if (platformSpawnTimer >= platformSpawnInterval) {
-		platformSpawnTimer = 0.0f;
-
-		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
-
-		Vector3 pos;
-		if (player_->IsInversion()) {
-			pos = {posX(randomEngine_), 21.0f, 0.0f};
-		} else {
-			pos = {posX(randomEngine_), -20.0f, 0.0f};
+		// タイトル終了時にアニメーション状態をリセット
+		isFlipping = false;
+		flipProgress = 0.0f;
+		currentScale = 1.0f;
+		isFlipped = false;
+		if (sprite2_) {
+			sprite2_->SetIsFlipX(false);
+			// サイズも元に戻す
+			sprite2_->SetSize({1280.0f, 720.0f});
 		}
-
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platforms_.push_back(platform);
 	}
 
-	// プレイヤーの重力に応じたスクロール
-	float gravity = player_->GetGravity();
-	float scrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
+	// sprites[1] のアニメーション - イージング付き（タイトル中のみ）
+	if (!isFinished_ && sprite2_) {
+		// アニメーションタイマーを更新
+		animationTimer += 0.016f; // 60FPSを想定した時間増分
 
-	for (auto platform : platforms_) {
-		platform->SetScrollSpeed(scrollSpeed);
-		platform->Update();
-	}
+		// 現在のスプライトの位置を取得
+		KamataEngine::Vector2 pos = sprite2_->GetPosition();
 
-	// 画面外の足場を削除
-	for (auto it = platforms_.begin(); it != platforms_.end();) {
-		Vector3 pos = (*it)->GetWorldPosition();
+		// 移動速度
+		float slowMoveSpeed = 2.0f;
 
-		if (player_->IsInversion()) {
-			if (pos.y > 22.0f) {
-				delete *it;
-				it = platforms_.erase(it);
-				continue;
-			}
-		} else {
-			if (pos.y < -22.0f) {
-				delete *it;
-				it = platforms_.erase(it);
-				continue;
-			}
-		}
-		++it;
-	}
+		// 反転アニメーション処理
+		if (isFlipping) {
+			flipProgress += 0.016f / flipDuration; // 進行度を更新
 
-	if (platformSpawnTimer >= platformSpawnInterval) {
-		platformSpawnTimer = 0.0f;
-
-		float x;
-		if (platformSideFlag) {
-			// 左側範囲
-			std::uniform_real_distribution<float> posX(-20.0f, 0.0f);
-			x = posX(randomEngine_);
-		} else {
-			// 右側範囲
-			std::uniform_real_distribution<float> posX(0.0f, 20.0f);
-			x = posX(randomEngine_);
-		}
-		platformSideFlag = !platformSideFlag; // 毎回交互に切り替え
-
-		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platforms_.push_back(platform);
-
-		lastPlatformX = x; // 必要なら記憶
-	}
-
-	// =====================
-	// プレイヤー更新
-	// =====================
-	player_->Update();
-
-	// =====================
-	// 衝突判定（横 + 縦 全部ここで処理）
-	// =====================
-	for (auto platform : platforms_) {
-		const AABB& platformAABB = platform->GetAABB();
-		const AABB& playerAABB = player_->GetAABB();
-
-		if (!playerAABB.IsColliding(platformAABB)) {
-			continue;
-		}
-
-		// プレイヤー中心とプラットフォーム中心の差
-		Vector3 playerPos = player_->GetPosition();
-		Vector3 platPos = platform->GetWorldPosition();
-
-		Vector3 overlap; // 重なり量
-		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
-		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
-
-		// 衝突解決（重なりが小さい方に押し戻す）
-		if (overlap.x < overlap.y) {
-			// 横衝突
-			if (playerPos.x < platPos.x) {
-				// 左からぶつかった
-				playerPos.x -= overlap.x;
+			if (flipProgress >= 1.0f) {
+				// 反転アニメーション完了
+				flipProgress = 1.0f;
+				isFlipping = false;
+				currentScale = 1.0f;
+				// 実際の反転状態を切り替え
+				isFlipped = !isFlipped;
+				sprite2_->SetIsFlipX(isFlipped);
 			} else {
-				// 右からぶつかった
-				playerPos.x += overlap.x;
+				// イージングを適用してスケールを計算
+				if (flipProgress < 0.5f) {
+					// 前半：1.0f → 0.0f (縮小)
+					float t = flipProgress * 2.0f; // 0.0f ～ 1.0f にマッピング
+					currentScale = 1.0f - EaseInOutQuad(t);
+				} else {
+					// 後半：0.0f → 1.0f (拡大)
+					float t = (flipProgress - 0.5f) * 2.0f; // 0.0f ～ 1.0f にマッピング
+					currentScale = EaseOutBounce(t);
+					// この時点でスプライトの反転状態を更新（1回だけ）
+					static bool flippedThisCycle = false;
+					if (!flippedThisCycle) {
+						sprite2_->SetIsFlipX(!isFlipped);
+						flippedThisCycle = true;
+					}
+					// サイクル終了時にフラグをリセット
+					if (flipProgress >= 0.9f) {
+						flippedThisCycle = false;
+					}
+				}
 			}
-			player_->SetVelocityX(0.0f);
 		} else {
-			// 縦衝突
-			if (playerPos.y > platPos.y) {
-				// 上から着地
-				playerPos.y += overlap.y;
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
-			} else {
-				// 下からぶつかった
-				playerPos.y -= overlap.y;
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
+			currentScale = 1.0f;
+		}
+
+		// 移動方向の切り替えと反転開始判定
+		if (isMovingDown) {
+			pos.y += slowMoveSpeed;
+			if (pos.y >= SCREEN_BOTTOM_Y && !isFlipping) {
+				isMovingDown = false;
+				// 反転アニメーション開始
+				isFlipping = true;
+				flipProgress = 0.0f;
+			}
+		} else {
+			pos.y -= slowMoveSpeed;
+			if (pos.y <= FLIP_THRESHOLD && !isFlipping) {
+				isMovingDown = true;
+				// 反転アニメーション開始
+				isFlipping = true;
+				flipProgress = 0.0f;
 			}
 		}
 
-		// 修正した座標を反映
-		player_->SetPosition(playerPos);
+		// スプライトの位置を更新
+		sprite2_->SetPosition(pos);
+
+		// スケールを適用（イージング効果）
+		// 元のサイズを保持しつつ、X軸のみスケール変更
+		KamataEngine::Vector2 originalSize = {1280.0f, 720.0f};
+		sprite2_->SetSize({originalSize.x * currentScale, originalSize.y});
 	}
+
+	//	// 足場の生成タイミング管理
+	//platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
+	//if (platformSpawnTimer >= platformSpawnInterval) {
+	//	platformSpawnTimer = 0.0f;
+
+	//	std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
+
+	//	Vector3 pos;
+	//	if (player_->IsInversion()) {
+	//		pos = {posX(randomEngine_), 21.0f, 0.0f};
+	//	} else {
+	//		pos = {posX(randomEngine_), -20.0f, 0.0f};
+	//	}
+
+	//	Vector3 scale = {1.5f, 1.2f, 1.0f};
+	//	Platform* platform = new Platform();
+	//	platform->Initialize(pos, scale, modelPlatform_, &camera_);
+	//	platforms_.push_back(platform);
+	//}
+
+	//// プレイヤーの重力に応じたスクロール
+	//float gravity = player_->GetGravity();
+	//float scrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
+
+	//for (auto platform : platforms_) {
+	//	platform->SetScrollSpeed(scrollSpeed);
+	//	platform->Update();
+	//}
+
+	//// 画面外の足場を削除
+	//for (auto it = platforms_.begin(); it != platforms_.end();) {
+	//	Vector3 pos = (*it)->GetWorldPosition();
+
+	//	if (player_->IsInversion()) {
+	//		if (pos.y > 22.0f) {
+	//			delete *it;
+	//			it = platforms_.erase(it);
+	//			continue;
+	//		}
+	//	} else {
+	//		if (pos.y < -22.0f) {
+	//			delete *it;
+	//			it = platforms_.erase(it);
+	//			continue;
+	//		}
+	//	}
+	//	++it;
+	//}
+
+	//if (platformSpawnTimer >= platformSpawnInterval) {
+	//	platformSpawnTimer = 0.0f;
+
+	//	float x;
+	//	if (platformSideFlag) {
+	//		// 左側範囲
+	//		std::uniform_real_distribution<float> posX(-20.0f, 0.0f);
+	//		x = posX(randomEngine_);
+	//	} else {
+	//		// 右側範囲
+	//		std::uniform_real_distribution<float> posX(0.0f, 20.0f);
+	//		x = posX(randomEngine_);
+	//	}
+	//	platformSideFlag = !platformSideFlag; // 毎回交互に切り替え
+
+	//	Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
+	//	Vector3 scale = {1.5f, 1.2f, 1.0f};
+	//	Platform* platform = new Platform();
+	//	platform->Initialize(pos, scale, modelPlatform_, &camera_);
+	//	platforms_.push_back(platform);
+
+	//	lastPlatformX = x; // 必要なら記憶
+	//}
+
+	//// =====================
+	//// プレイヤー更新
+	//// =====================
+	//player_->Update();
+
+	//// =====================
+	//// 衝突判定（横 + 縦 全部ここで処理）
+	//// =====================
+	//for (auto platform : platforms_) {
+	//	const AABB& platformAABB = platform->GetAABB();
+	//	const AABB& playerAABB = player_->GetAABB();
+
+	//	if (!playerAABB.IsColliding(platformAABB)) {
+	//		continue;
+	//	}
+
+	//	// プレイヤー中心とプラットフォーム中心の差
+	//	Vector3 playerPos = player_->GetPosition();
+	//	Vector3 platPos = platform->GetWorldPosition();
+
+	//	Vector3 overlap; // 重なり量
+	//	overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
+	//	overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
+
+	//	// 衝突解決（重なりが小さい方に押し戻す）
+	//	if (overlap.x < overlap.y) {
+	//		// 横衝突
+	//		if (playerPos.x < platPos.x) {
+	//			// 左からぶつかった
+	//			playerPos.x -= overlap.x;
+	//		} else {
+	//			// 右からぶつかった
+	//			playerPos.x += overlap.x;
+	//		}
+	//		player_->SetVelocityX(0.0f);
+	//	} else {
+	//		// 縦衝突
+	//		if (playerPos.y > platPos.y) {
+	//			// 上から着地
+	//			playerPos.y += overlap.y;
+	//			player_->SetVelocityY(0.0f);
+	//			player_->SetOnGround(true);
+	//		} else {
+	//			// 下からぶつかった
+	//			playerPos.y -= overlap.y;
+	//			player_->SetVelocityY(0.0f);
+	//			player_->SetOnGround(true);
+	//		}
+	//	}
+
+	//	// 修正した座標を反映
+	//	player_->SetPosition(playerPos);
+	//}
 }
 
 void TitleScnce::Draw() {
