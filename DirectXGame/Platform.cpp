@@ -18,34 +18,18 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* norma
 			// 片側のみ高さを拡張/縮小（危険面の方向に拡張）+ 安全側調整
 			float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
 			if (delta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) {
-					maxV.y += delta;
-				} else {
-					minV.y -= delta;
-				}
+				if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
 			} else if (delta < 0.0f) {
 				float shrink = -delta;
-				if (damageDirection_ == DamageDirection::TOP) {
-					maxV.y -= shrink;
-				} else {
-					minV.y += shrink;
-				}
+				if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
 			}
 			// 安全側（反対側）をスケール
 			float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
 			if (safeDelta < 0.0f) {
 				float safeShrink = -safeDelta;
-				if (damageDirection_ == DamageDirection::TOP) {
-					minV.y += safeShrink;
-				} else {
-					maxV.y -= safeShrink;
-				}
+				if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
 			} else if (safeDelta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) {
-					minV.y -= safeDelta;
-				} else {
-					maxV.y += safeDelta;
-				}
+				if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
 			}
 			// オフセット（TOPは上へ、BOTTOMは下へ）
 			if (damageDirection_ == DamageDirection::TOP) {
@@ -85,34 +69,18 @@ void Platform::Update() {
 	if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
 		float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
 		if (delta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) {
-				maxV.y += delta;
-			} else {
-				minV.y -= delta;
-			}
+			if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
 		} else if (delta < 0.0f) {
 			float shrink = -delta;
-			if (damageDirection_ == DamageDirection::TOP) {
-				maxV.y -= shrink;
-			} else {
-				minV.y += shrink;
-			}
+			if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
 		}
 		// 安全側（反対側）をスケール
 		float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
 		if (safeDelta < 0.0f) {
 			float safeShrink = -safeDelta;
-			if (damageDirection_ == DamageDirection::TOP) {
-				minV.y += safeShrink;
-			} else {
-				maxV.y -= safeShrink;
-			}
+			if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
 		} else if (safeDelta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) {
-				minV.y -= safeDelta;
-			} else {
-				maxV.y += safeDelta;
-			}
+			if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
 		}
 		// オフセット（TOPは上へ、BOTTOMは下へ）
 		if (damageDirection_ == DamageDirection::TOP) {
