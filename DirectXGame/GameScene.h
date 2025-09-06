@@ -100,35 +100,9 @@ private:
 
 	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
 	
-    // HP用ワールドトランスフォーム
-	std::vector<WorldTransform*> hpWorldTransforms_;
-
-	// プレイヤーオブジェクトへのポインタ
-	Player* player_ = nullptr;
-
-	// プレイヤーモデル
-	Model* modelPlayer_ = nullptr;
-
-	// プラットフォームモデル
-	Model* modelPlatform_ = nullptr;
-
-	// カメラ
-	Camera camera_;
-
-	// ワールド変換（汎用）
-	WorldTransform worldTransform;
-
-	// 動的に生成されるプラットフォームのコンテナ
-	std::vector<Platform*> platforms_;
-
-	// 乱数生成エンジン（メルセンヌ・ツイスタ）
-	std::mt19937 randomEngine_;
-	const int platformCount = 1; // 足場の数
-
 	// スコア表示用フォント
 	BIt_Map_Font* font_ = nullptr;
 	int score_ = 0;
 	int prevScore_ = 0; // 追加
-	Vector3 prevPlayerPos_; // 前フレームのプレイヤー位置
 	bool prevOnGround_ = false; // 前フレームの地面判定
 };
