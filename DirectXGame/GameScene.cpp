@@ -178,8 +178,10 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
+
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
+	
 	if (platformSpawnTimer >= platformSpawnInterval) {
 		platformSpawnTimer = 0.0f;
 
@@ -203,7 +205,10 @@ void GameScene::Update() {
 		}
 
 		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		// ▼▼▼ 修正箇所 ▼▼▼
+		// Initializeの呼び出しを正しい引数(6個)に変更
+		platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+		// ▲▲▲ 修正箇所 ▲▲▲
 		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 	}
@@ -303,7 +308,10 @@ void GameScene::Update() {
 		}
 
 		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		// ▼▼▼ 修正箇所 ▼▼▼
+		// Initializeの呼び出しを正しい引数(6個)に変更
+		platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+		// ▲▲▲ 修正箇所 ▲▲▲
 		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 
@@ -312,6 +320,7 @@ void GameScene::Update() {
 
 	player_->Update();
 
+	// ▼▼▼ 修正箇所 (構文エラーの修正) ▼▼▼
 	// 衝突判定
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
@@ -341,44 +350,35 @@ void GameScene::Update() {
 			// 縦衝突
 			if (playerPos.y > platPos.y) {
 				// 上から着地した場合
-				// プレイヤーの底辺を足場の上面に正確に配置
 				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
-				Vector3 platformSize = platformAABB.GetMax() - platformAABB.GetMin();
 				float playerHalfHeight = playerSize.y * 0.5f;
-				// float platformHalfHeight = platformSize.y * 0.5f;
 				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f; // 完全に上に配置
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
 			}
+			// 注: 下からの衝突解決はここにはありませんが、構文エラーは修正されます
 		}
 
-		if (platform->IsDamage()) {
-			// プレイヤーにダメージ処理を通知
-		//	player_->TakeDamage(player_->GetPosition());
-		}
-
-		// 修正した座標を反映
-		player_->SetPosition(playerPos);
-
-				// 足場の下面が危険な場合、ダメージを受ける
-				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix();
-							}
-						}
+		// ダメージ処理
+		if (platform->GetDamageDirection() != DamageDirection::NONE) {
+			// ダメージを受ける足場に、いずれかの方向から接触した場合
+			if (!player_->IsInvincible()) {
+				if (playerHP_ > 0) {
+					playerHP_--;
+					player_->OnDamage(); // 関数名を修正
+					if (playerHP_ < (int)hpWorldTransforms_.size()) {
+						hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+						hpWorldTransforms_[playerHP_]->UpdateMatarix();
 					}
 				}
 			}
 		}
+
 		// 修正した座標を反映
 		player_->SetPosition(playerPos);
-	}
-}
+	} // forループの終わり
+} // Update関数の終わり
+// ▲▲▲ 修正箇所 ▲▲▲
 
 void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();

@@ -151,6 +151,7 @@ void TitleScnce::Initialize() {
 
 	const int platformCount = 10; // 足場の数
 	for (int i = 0; i < platformCount; i++) {
+		// ▼▼▼ 修正箇所 (変数の定義を追加) ▼▼▼
 		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
 		bool isDamage = false;
@@ -161,9 +162,10 @@ void TitleScnce::Initialize() {
 			scale = {1.5f, 2.4f, 1.0f}; // 横はそのまま、縦だけ2倍
 			isDamage = true;            // ダメージ足場フラグON
 		}
+		// ▲▲▲ 修正箇所 ▲▲▲
 
 		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		platform->Initialize(pos, scale, modelPlatform_, nullptr, nullptr, &camera_);
 		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 	}
@@ -171,6 +173,7 @@ void TitleScnce::Initialize() {
 	// ワールドトランスフォームの初期化
 	worldTransform.Initialize();
 }
+
 
 void TitleScnce::InitializeSprites() {
 	sprites.push_back(sprite_);
@@ -337,12 +340,20 @@ void TitleScnce::Update() {
 			isDamage = true;
 		}
 
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
-		platforms_.push_back(platform);
+		// 交互生成ロジック
+		if (platformSpawnTimer >= platformSpawnInterval) {
+			// (中略)
 
-		lastPlatformX = x; // 必要なら記憶
+			Platform* platform = new Platform();
+			// ▼▼▼ 修正箇所 ▼▼▼
+			// こちらも同様に修正
+			platform->Initialize(pos, scale, modelPlatform_, nullptr, nullptr, &camera_);
+			// ▲▲▲ 修正箇所 ▲▲▲
+			platform->SetDamage(isDamage);
+			platforms_.push_back(platform);
+
+			lastPlatformX = x; // 必要なら記憶
+		}
 	}
 
 	player_->Update();

@@ -15,7 +15,7 @@ public:
 	void Draw();
 
 	// ダメージを受け取る関数
-	void TakeDamage();
+	void OnDamage();
 
 	// ==== Getter / Setter ====
 	float GetGravity() const;
@@ -38,8 +38,6 @@ public:
 
 	void SetDamage(bool flag) { isDamage_ = flag; }
 
-	//void TakeDamage(const Vector3& playerPos);
-
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -51,14 +49,14 @@ private:
 	const float maxFallSpeed = 1.0f;
 
 	// 重力
-	float gravity = -0.07f;//これいじっても変わらないよん
+	float gravity = -0.07f;
 
 	// ジャンプ初速度
-	const float jumpPower = 0.76f;//0.73でもいいかも 75
+	const float jumpPower = 0.76f;
 
-	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
-	const float minPlatformX = -20.0f; // 左端
-	const float maxPlatformX = 20.0f; 
+	// 足場のX座標制限
+	const float minPlatformX = -20.0f;
+	const float maxPlatformX = 20.0f;
 
 	bool isOnGround_ = false;
 
@@ -68,11 +66,11 @@ private:
 
 	float targetGravity = -0.06f; // 目標重力
 	float gravityLerpSpeed = 0.07f;
-	
+
 	// 重力切り替え後の一時的な低重力システム
-	bool isGravityTransitioning_ = false; // 重力切り替え中フラグ
-	float transitionGravity_ = -0.02f; // 切り替え後の低重力
-	float normalGravity_ = -0.07f; // 通常重力
+	bool isGravityTransitioning_ = false;
+	float transitionGravity_ = -0.02f;
+	float normalGravity_ = -0.07f;
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;
@@ -82,14 +80,10 @@ private:
 	bool inversion = false;
 
 	// ダメージ関連
-	bool isInvincible_ = false;         // 無敵中か
-	float invincibleTimer_ = 0.0f;      // 無敵時間タイマー
-	const float kInvincibleTime = 2.0f; // 無敵時間（秒）
-
-	// 無敵状態かどうかを示すフラグ
 	bool isInvincible_ = false;
-	// 無敵時間タイマー
-	float invincibilityTimer_ = 0.0f;
+	float invincibleTimer_ = 0.0f;
+	const float kInvincibleTime = 2.0f;
+	bool isDamage_ = false;
 
 	Model* model_ = nullptr;
 	Input* input_ = nullptr;
