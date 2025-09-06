@@ -35,6 +35,13 @@ void SelectScene::Initialize() {
 	selectSprite_3 = KamataEngine::Sprite::Create(textureHandle_3, {0, 0});
 	selectSprite_3->SetPosition({0, 0}); // 画面中央に配置
 
+	KeytextureHandle_ = KamataEngine::TextureManager::Load("key.png");
+	KeyselectSprite_ = KamataEngine::Sprite::Create(KeytextureHandle_, {0, 0});
+	KeyselectSprite_->SetPosition({0, 0}); // 画面中央に配置
+	KeyselectSprite_->SetAnchorPoint({0.5f, 0.5f});
+	// 画面下部の中央に配置
+	KeyselectSprite_->SetPosition({1280.0f / 2.0f, 720.0f - 100.0f});
+
 	// 矢印スプライトの作成
 	arrowTextureHandle_ = KamataEngine::TextureManager::Load("select/Sentaku.png");
 	arrowSprite_ = KamataEngine::Sprite::Create(arrowTextureHandle_, {0, 0});
@@ -52,35 +59,64 @@ void SelectScene::Initialize() {
 }
 
 void SelectScene::Update() {
-	// 左矢印キーが押されたら前の画面へ
-	if (input_->TriggerKey(DIK_LEFT)) {
+	// ▼▼▼ 関数のはじめに、コントローラーの状態変数を準備 ▼▼▼
+	XINPUT_STATE xInputState = {};     // {} を追加して初期化
+	XINPUT_STATE xInputStatePrev = {}; // ← ★★★ここを修正★★★
+	bool isControllerConnected = input_->GetJoystickState(0, xInputState) && input_->GetJoystickStatePrevious(0, xInputStatePrev);
+
+	// 十字キーまたは左スティックの左右トリガー判定
+	bool isLeftTriggered = false;
+	bool isRightTriggered = false;
+	if (isControllerConnected) {
+		// D-Pad
+		if ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)) {
+			isLeftTriggered = true;
+		}
+		if ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)) {
+			isRightTriggered = true;
+		}
+		// Left Stick
+		if (xInputState.Gamepad.sThumbLX < -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && xInputStatePrev.Gamepad.sThumbLX >= -XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+			isLeftTriggered = true;
+		}
+		if (xInputState.Gamepad.sThumbLX > XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE && xInputStatePrev.Gamepad.sThumbLX <= XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE) {
+			isRightTriggered = true;
+		}
+	}
+
+	// 左矢印キーが押されたら前の画面へ (キーボード または コントローラー)
+	if (input_->TriggerKey(DIK_LEFT) || isLeftTriggered) {
 		currentSelectIndex_--;
 		if (currentSelectIndex_ < 0) {
 			currentSelectIndex_ = 2; // 最後の画面にループ
 		}
-		// 矢印の移動を開始
 		StartArrowMovement();
 	}
 
-	// 右矢印キーが押されたら次の画面へ
-	if (input_->TriggerKey(DIK_RIGHT)) {
+	// 右矢印キーが押されたら次の画面へ (キーボード または コントローラー)
+	if (input_->TriggerKey(DIK_RIGHT) || isRightTriggered) {
 		currentSelectIndex_++;
 		if (currentSelectIndex_ > 2) {
 			currentSelectIndex_ = 0; // 最初の画面にループ
 		}
-		// 矢印の移動を開始
 		StartArrowMovement();
 	}
 
-	if (currentSelectIndex_ == 0) {
+	// Aボタンが押された瞬間かどうかの判定
+	bool isAButtonTriggered = false;
+	if (isControllerConnected) {
+		if ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_A) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_A)) {
+			isAButtonTriggered = true;
+		}
+	}
 
-		// Enterキーが押されたらゲーム開始
-		if (input_->TriggerKey(DIK_RETURN)) {
+	if (currentSelectIndex_ == 0) {
+		// EnterキーまたはAボタンが押されたらゲーム開始
+		if (input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
 			isGameStart_ = true;
 		}
-
 	}
-	// 矢印のアニメーション更新
+
 	UpdateArrowAnimation();
 }
 
@@ -182,6 +218,11 @@ void SelectScene::Draw() {
 	// 矢印スプライトを描画
 	if (arrowSprite_) {
 		arrowSprite_->Draw();
+	}
+
+	// キースプライトを描画
+	if (KeyselectSprite_) {
+		KeyselectSprite_->Draw();
 	}
 
 	// 2D描画終了

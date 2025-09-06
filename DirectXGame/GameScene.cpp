@@ -12,6 +12,9 @@ GameScene::~GameScene() {
 
 	delete skySprite1_;
 	delete skySprite2_;
+
+	// ▼▼▼ font_の解放処理を追加 ▼▼▼
+	delete font_;
 }
 
 void GameScene::Initialize() {
@@ -97,6 +100,7 @@ void GameScene::Initialize() {
 	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f); // 15でもいいかも 16  20
+
 
 	// 右端（20, 0, 0）に配置
 	endTransformRight_.Initialize();

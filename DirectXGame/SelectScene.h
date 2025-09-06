@@ -54,12 +54,14 @@ private:
 	Sprite* selectSprite_2 = nullptr;
 	Sprite* selectSprite_3 = nullptr;
 
+	Sprite* KeyselectSprite_ = nullptr;
 	Sprite* arrowSprite_ = nullptr; // 矢印スプライト
 
 	uint32_t textureHandle_ = 0;
 	uint32_t textureHandle_1 = 0;
 	uint32_t textureHandle_2 = 0;
 	uint32_t textureHandle_3 = 0;
+	uint32_t KeytextureHandle_ = 0;
 	uint32_t arrowTextureHandle_ = 0; // 矢印テクスチャハンドル
 
 	// 矢印の移動

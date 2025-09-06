@@ -20,6 +20,34 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 void Player::Update() {
 	prevPosition_ = worldTransform_.translation_; // ▼▼▼ この行をUpdate関数の最初に追加 ▼▼▼
 
+	// ▼▼▼ 関数のはじめに、Inputインスタンスとコントローラーの状態変数を準備 ▼▼▼
+	Input* input = KamataEngine::Input::GetInstance();
+	XINPUT_STATE xInputState;
+	bool isControllerConnected = input->GetJoystickState(0, xInputState);
+
+	velocityX_ = 0.0f;
+
+	// ▼▼▼ 左右移動の判定を修正 ▼▼▼
+	// 左スティックのデッドゾーンを考慮した入力値
+	float stickX = 0.0f;
+	if (isControllerConnected) {
+		stickX = static_cast<float>(xInputState.Gamepad.sThumbLX) / SHRT_MAX; // -1.0f～1.0fに正規化
+		if (abs(stickX) < 0.3f) {                                             // デッドゾーン（入力の遊び）
+			stickX = 0.0f;
+		}
+	}
+
+	// 左右移動 (キーボード または コントローラー)
+	if (input->PushKey(DIK_A) || (isControllerConnected && (stickX < 0.0f || (xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)))) {
+		velocityX_ = -speed;
+	}
+	if (input->PushKey(DIK_D) || (isControllerConnected && (stickX > 0.0f || (xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)))) {
+		velocityX_ = speed;
+	}
+	// ▲▲▲ ここまで修正 ▲▲▲
+
+	worldTransform_.translation_.x += velocityX_;
+
 	// 無敵時間中の処理
 	if (isInvincible_) {
 		// タイマーをフレーム時間分だけ減らす (60FPS想定)
@@ -30,16 +58,16 @@ void Player::Update() {
 		}
 	}
 
-	velocityX_ = 0.0f;
+	//velocityX_ = 0.0f;
 
-	// 左右移動
-	if (input_->PushKey(DIK_A)) {
-		velocityX_ = -speed;
-	}
-	if (input_->PushKey(DIK_D)) {
-		velocityX_ = speed;
-	}
-	worldTransform_.translation_.x += velocityX_;
+	//// 左右移動
+	//if (input_->PushKey(DIK_A)) {
+	//	velocityX_ = -speed;
+	//}
+	//if (input_->PushKey(DIK_D)) {
+	//	velocityX_ = speed;
+	//}
+	//worldTransform_.translation_.x += velocityX_;
 
 	// X座標の上限・下限を適用
 	if (worldTransform_.translation_.x < minPlatformX) {
@@ -49,8 +77,20 @@ void Player::Update() {
 		worldTransform_.translation_.x = maxPlatformX;
 	}
 
-    // ジャンプ
-	if (input_->TriggerKey(DIK_SPACE)) {
+	// ▼▼▼ ジャンプの判定を修正 ▼▼▼
+	XINPUT_STATE xInputStatePrev;
+	bool isControllerPrevConnected = input->GetJoystickStatePrevious(0, xInputStatePrev);
+
+	// Aボタンが押された瞬間かどうかの判定
+	bool isAButtonTriggered = false;
+	if (isControllerConnected && isControllerPrevConnected) {
+		if ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_A) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_A)) {
+			isAButtonTriggered = true;
+		}
+	}
+
+	// ジャンプ (キーボード または コントローラー)
+	if (input->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
 		if (jumpCount_ < maxJumpCount_) {
 
 			// ▼▼▼ ここからが追加・修正部分 ▼▼▼
