@@ -40,11 +40,11 @@ void GameScene::Initialize() {
 
 	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
-	endTransformLeft_.translation_ = Vector3(-22.3f, 0.0f, 0.0f);
+	endTransformLeft_.translation_ = Vector3(-16.3f, 0.0f, 0.0f);//15でもいいかも
 
 	// 右端（20, 0, 0）に配置
 	endTransformRight_.Initialize();
-	endTransformRight_.translation_ = Vector3(22.3f, 0.0f, 0.0f);
+	endTransformRight_.translation_ = Vector3(16.3f, 0.0f, 0.0f);//15
 
 	endTransformLeft_.UpdateMatarix();
 	endTransformRight_.UpdateMatarix();
@@ -133,25 +133,25 @@ void GameScene::Update() {
 	gameTime_ += 1.0f / 60.0f; // 60FPS想定
 
 	// 速度倍率の計算（30秒ごとに0.1倍増加、最大3.0倍）
-	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.1f;
-	if (speedMultiplier_ > 3.0f) {
-		speedMultiplier_ = 3.0f;
+	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.5f;
+	if (speedMultiplier_ > 100.0f) {
+		speedMultiplier_ = 100.0f;
 	}
 
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
 
 	// --- 足場生成ロジック ---
-	if (platformSpawnTimer >= platformSpawnInterval) {
+	if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
 		platformSpawnTimer = 0.0f;
 
 		// X座標を左右交互の範囲で決める
 		float x;
 		if (platformSideFlag) {
-			std::uniform_real_distribution<float> posX(-20.0f, 0.0f);
+			std::uniform_real_distribution<float> posX(-14.0f, 0.0f);// 13でもいいかも
 			x = posX(randomEngine_);
 		} else {
-			std::uniform_real_distribution<float> posX(0.0f, 20.0f);
+			std::uniform_real_distribution<float> posX(0.0f, 14.0f);// 13ｄもいいかも
 			x = posX(randomEngine_);
 		}
 		platformSideFlag = !platformSideFlag;
@@ -162,9 +162,9 @@ void GameScene::Update() {
 
 		Platform* platform = new Platform();
 
-		// 50%の確率でダメージ足場を生成
-		std::uniform_int_distribution<int> dist01(0, 1);
-		if (dist01(randomEngine_) < 1) {
+        // 60%の確率でダメージ足場を生成
+		std::uniform_int_distribution<int> dist10(0, 9); // 0から9の乱数を生成
+		if (dist10(randomEngine_) < 6) {
 			//scale = {1.5f, 1.8f, 1.0f};
 			scale = {1.0f, 1.0f, 1.0f};
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
@@ -176,9 +176,9 @@ void GameScene::Update() {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
 			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
-			platform->SetDamageColliderScaleY(1.3f);
+			platform->SetDamageColliderScaleY(1.4f);
 			// 安全側（ダメージじゃない方）を少し小さく
-			platform->SetSafeSideScaleY(0.8f);
+			platform->SetSafeSideScaleY(1.0f);
 		} else {
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 			platform->SetDamageDirection(DamageDirection::NONE);

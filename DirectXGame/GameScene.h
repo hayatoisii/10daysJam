@@ -31,7 +31,7 @@ private:
 	WorldTransform gravityLineBottom_;
 
 	// プラットフォーム生成タイマー（経過時間）
-	float platformSpawnTimer = 0.0f;
+	float platformSpawnTimer = 1.5f;
 
 	// 最後に生成したプラットフォームのX座標
 	float lastPlatformX = 0.0f;
@@ -58,6 +58,8 @@ private:
 	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
 	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
 
+	const float spawnRateModifier = 1.2f; // ★この値を大きくすると、生成が遅くなります
+	
     // HP用ワールドトランスフォーム
 	std::vector<WorldTransform*> hpWorldTransforms_;
 
