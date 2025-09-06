@@ -343,6 +343,7 @@ void GameScene::Draw() {
 	if (spriteGravityLineTop_) {
 		spriteGravityLineTop_->Draw();
 	}
+
 	if (spriteGravityLineBottom_) {
 		spriteGravityLineBottom_->Draw();
 	}
