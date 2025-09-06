@@ -152,7 +152,7 @@ void GameScene::Update() {
 			pos = {posX(randomEngine_), -20.0f, 0.0f};
 		}
 
-		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
+		pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
 		// Vector3 scale = {1.5f, 1.2f, 1.0f};
 		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
 
