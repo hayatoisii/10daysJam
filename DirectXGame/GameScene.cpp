@@ -302,33 +302,38 @@ void GameScene::Update() {
 	// プレイヤーの現在位置
 	Vector3 currentPlayerPos = player_->GetPosition();
 
-	//// 落下・ジャンプ中か判定
-	//bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+	// 落下・ジャンプ中か判定
+	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
 
-	//// Y座標が変化している場合のみスコア加算
-	//if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
-	//	score_++;
-	//}
+	// Y座標が変化している場合のみスコア加算
+	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+		score_++;
+	}
 
-	//prevPlayerPos_ = currentPlayerPos;
-	//prevOnGround_ = player_->IsOnGround();
+	prevPlayerPos_ = currentPlayerPos;
+	prevOnGround_ = player_->IsOnGround();
 
-	//if (score_ != prevScore_) {
-	//	font_->Set(score_);
-	//	prevScore_ = score_;
-	//}
+	if (score_ != prevScore_) {
+		font_->Set(score_);
+		prevScore_ = score_;
+	}
 }
 
 void GameScene::Draw() {
 	// (この関数の中身は変更ありません)
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 	Model::PreDraw(dxCommon->GetCommandList());
+
+
 	if (modelBackground_) {
 		modelBackground_->Draw(transformBackground_, camera_);
 	}
 	Model::PostDraw();
+
 	dxCommon->ClearDepthBuffer();
+
 	Sprite::PreDraw(dxCommon->GetCommandList());
+
 	if (skySprite1_) {
 		skySprite1_->Draw();
 	}
@@ -342,8 +347,11 @@ void GameScene::Draw() {
 		spriteGravityLineBottom_->Draw();
 	}
 	Sprite::PostDraw();
+
 	dxCommon->ClearDepthBuffer();
+
 	Model::PreDraw(dxCommon->GetCommandList());
+
 	for (auto platform : platforms_) {
 		platform->Draw();
 	}
@@ -357,5 +365,7 @@ void GameScene::Draw() {
 			hpModel_->Draw(*hpWorldTransforms_[i], camera_);
 		}
 	}
+	font_->Draw();
+
 	Model::PostDraw();
 }

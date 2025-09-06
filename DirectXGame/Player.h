@@ -29,6 +29,8 @@ public:
 	float GetHalfSizeY() const { return halfSize_.y; }
 
 	bool IsInversion() const { return inversion; }
+	bool IsOnGround() const { return onGround_; }
+	void Set_Bit_Ground(bool value) { onGround_ = value; }
 
 	void SetOnGround(bool flag);
 
@@ -96,4 +98,6 @@ private:
 	WorldTransform worldTransform_;
 	AABB aabb_;
 	Vector3 halfSize_{0.5f, 0.5f, 0.5f};
+
+	bool onGround_ = false; // 地面にいるかどうか
 };

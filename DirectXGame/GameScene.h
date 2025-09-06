@@ -101,4 +101,8 @@ private:
 
 	// スコア表示用フォント
 	BIt_Map_Font* font_ = nullptr;
+	int score_ = 0;
+	int prevScore_ = 0; // 追加
+	Vector3 prevPlayerPos_; // 前フレームのプレイヤー位置
+	bool prevOnGround_ = false; // 前フレームの地面判定
 };
