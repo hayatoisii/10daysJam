@@ -7,42 +7,6 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* norma
 	worldTransform_.scale_ = scale;
 	// Keep an internal copy of scale for AABB updates
 	scale_ = scale;
-	worldTransform_.UpdateMatarix();
-	// 初期AABBもUpdateと同じ式で計算し、ダメージ足場ならオフセット
-	{
-		Vector3 initPos = pos;
-		Vector3 baseHalf = (baseSize_ * scale_) * 0.5f;
-		Vector3 minV = initPos - baseHalf;
-		Vector3 maxV = initPos + baseHalf;
-		if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
-			// 片側のみ高さを拡張/縮小（危険面の方向に拡張）+ 安全側調整
-			float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
-			if (delta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
-			} else if (delta < 0.0f) {
-				float shrink = -delta;
-				if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
-			}
-			// 安全側（反対側）をスケール
-			float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
-			if (safeDelta < 0.0f) {
-				float safeShrink = -safeDelta;
-				if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
-			} else if (safeDelta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
-			}
-			// オフセット（TOPは上へ、BOTTOMは下へ）
-			if (damageDirection_ == DamageDirection::TOP) {
-				minV.y += damageColliderYOffset_;
-				maxV.y += damageColliderYOffset_;
-			} else {
-				minV.y -= damageColliderYOffset_;
-				maxV.y -= damageColliderYOffset_;
-			}
-		}
-		aabb_.Set(minV, maxV);
-	}
-	this->camera_ = camera;
 
 	// 3つのモデルへのポインタを保持
 	this->normalModel_ = normalModel;
@@ -63,35 +27,8 @@ void Platform::Update() {
 
 	// AABBを現在の位置・スケールに合わせて更新
 	Vector3 pos = worldTransform_.translation_;
-	Vector3 baseHalf = (baseSize_ * scale_) * 0.5f;
-	Vector3 minV = pos - baseHalf;
-	Vector3 maxV = pos + baseHalf;
-	if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
-		float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
-		if (delta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
-		} else if (delta < 0.0f) {
-			float shrink = -delta;
-			if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
-		}
-		// 安全側（反対側）をスケール
-		float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
-		if (safeDelta < 0.0f) {
-			float safeShrink = -safeDelta;
-			if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
-		} else if (safeDelta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
-		}
-		// オフセット（TOPは上へ、BOTTOMは下へ）
-		if (damageDirection_ == DamageDirection::TOP) {
-			minV.y += damageColliderYOffset_;
-			maxV.y += damageColliderYOffset_;
-		} else {
-			minV.y -= damageColliderYOffset_;
-			maxV.y -= damageColliderYOffset_;
-		}
-	}
-	aabb_.Set(minV, maxV);
+	Vector3 halfSize = (baseSize_ * scale_) * 0.5f;
+	aabb_.Set(pos - halfSize, pos + halfSize);
 
 	// ワールド行列の更新
 	worldTransform_.UpdateMatarix();

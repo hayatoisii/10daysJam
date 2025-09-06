@@ -2,6 +2,7 @@
 #include "KamataEngine.h"
 #include "Platform.h"
 #include "Player.h"
+#include "BIt_Map_Font.h"
 #include <random>
 #include <vector>
 
@@ -19,21 +20,14 @@ public:
 	// 描画処理
 	void Draw();
 
+	// ▼▼▼ 以下の2行を追加 ▼▼▼
+	bool IsGameOver() const { return isGameOver_; }
+	bool IsGameClear() const { return isGameClear_; }
+
 private:
-	// プレイヤーのX軸移動範囲を可視化するモデル
 	KamataEngine::Model* modelEnd_ = nullptr;
 	WorldTransform endTransformLeft_;
 	WorldTransform endTransformRight_;
-
-	// ▼▼▼ 重力反転ライン用スプライトのメンバ変数を追加 ▼▼▼
-	uint32_t spriteGravityLineTopHandle_ = 0;
-	uint32_t spriteGravityLineBottomHandle_ = 0;
-	Sprite* spriteGravityLineTop_ = nullptr;
-	Sprite* spriteGravityLineBottom_ = nullptr;
-
-	uint32_t skyTextureHandle_ = 0;
-	Sprite* skySprite1_ = nullptr;
-	Sprite* skySprite2_ = nullptr;
 
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 1.5f;
@@ -53,21 +47,11 @@ private:
 
 	const float minPlatformDistance = 4.0f;
 
-    int playerHP_ = 3;
-
-	const int platformCount = 1; // 足場の数
+	int playerHP_ = 3;
 
     // HP用モデル
-    Model* hpModel_ = nullptr;
+    KamataEngine::Model* hpModel_ = nullptr;
 
-	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
-	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
-
-	KamataEngine::Model* modelBackground_ = nullptr;
-	WorldTransform transformBackground_;
-
-	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
-	
     // HP用ワールドトランスフォーム
 	std::vector<WorldTransform*> hpWorldTransforms_;
 

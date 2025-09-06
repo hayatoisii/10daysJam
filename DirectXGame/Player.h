@@ -29,6 +29,8 @@ public:
 	float GetHalfSizeY() const { return halfSize_.y; }
 
 	bool IsInversion() const { return inversion; }
+	bool IsOnGround() const { return onGround_; }
+	void Set_Bit_Ground(bool value) { onGround_ = value; }
 
 	void SetOnGround(bool flag);
 
@@ -50,15 +52,15 @@ private:
 	const float maxFallSpeed = 1.0f;
 
 	// 重力
-	float gravity = -0.07f;//これいじっても変わらないよん
+	float gravity = -0.07f;
 
 	// ジャンプ初速度
-	const float jumpPower = 0.76f;//0.73でもいいかも 75
+	const float jumpPower = 1.3f;
 
 	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
-	const float minPlatformX = -17.0f; // 左端13でもいいかも 14  20
-	const float maxPlatformX = 17.0f;  // 右端1313131313   14  20
- 
+	const float minPlatformX = -20.0f; // 左端
+	const float maxPlatformX = 20.0f; 
+
 	bool isOnGround_ = false;
 
 	// 速度
@@ -67,11 +69,6 @@ private:
 
 	float targetGravity = -0.04f; // 目標重力
 	float gravityLerpSpeed = 0.07f;
-	
-	// 重力切り替え後の一時的な低重力システム
-	bool isGravityTransitioning_ = false; // 重力切り替え中フラグ
-	float transitionGravity_ = -0.02f; // 切り替え後の低重力
-	float normalGravity_ = -0.07f; // 通常重力
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;
@@ -96,4 +93,6 @@ private:
 	WorldTransform worldTransform_;
 	AABB aabb_;
 	Vector3 halfSize_{0.5f, 0.5f, 0.5f};
+
+	bool onGround_ = false; // 地面にいるかどうか
 };
