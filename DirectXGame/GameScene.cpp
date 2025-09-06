@@ -23,7 +23,7 @@ void GameScene::Initialize() {
 	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
-	hpModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+	hpModel_ = KamataEngine::Model::CreateFromOBJ("heart", true);
 	// 上下それぞれのダメージモデルを読み込む
 	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);       // 上向きダメージモデルのファイル名にしてください
 	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true); // 下向きダメージモデルのファイル名にしてください
@@ -195,7 +195,7 @@ void GameScene::Update() {
 		std::uniform_int_distribution<int> dist10(0, 9); // 0から9の乱数を生成
 		if (dist10(randomEngine_) < 6) {
 			// scale = {1.5f, 1.8f, 1.0f};
-			scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
+			scale = {1.3f, 1.5f, 1.0f}; // 1.0でもいいかも
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 
 			// プレイヤーの重力方向に応じて危険な面を設定
@@ -205,7 +205,7 @@ void GameScene::Update() {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
 			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
-			platform->SetDamageColliderScaleY(1.4f);
+			platform->SetDamageColliderScaleY(1.3f);
 			// 安全側（ダメージじゃない方）を少し小さく
 			platform->SetSafeSideScaleY(1.0f);
 		} else {
