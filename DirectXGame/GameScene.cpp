@@ -87,9 +87,6 @@ void GameScene::Initialize() {
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
-	float windowWidth = (float)WinApp::kWindowWidth;
-	float windowHeight = (float)WinApp::kWindowHeight;
-
 	skySprite1_->SetSize({windowWidth, windowHeight});
 	skySprite2_->SetSize({windowWidth, windowHeight});
 	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
