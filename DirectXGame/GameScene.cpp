@@ -80,7 +80,8 @@ void GameScene::Initialize() {
 	{
 		Platform* firstPlatform = new Platform();
 		Vector3 pos = {0.0f, -2.0f, 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		//Vector3 scale = {1.5f, 1.2f, 1.0f};
+		Vector3 scale = {1.0f, 1.0f, 1.0f};
 		// Initializeに3種類のモデルを全て渡す
 		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 		firstPlatform->SetDamageDirection(DamageDirection::NONE); // 無害
@@ -156,14 +157,16 @@ void GameScene::Update() {
 		platformSideFlag = !platformSideFlag;
 
 		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		//Vector3 scale = {1.5f, 1.2f, 1.0f};
+		Vector3 scale = {1.0f, 1.0f, 1.0f};
 
 		Platform* platform = new Platform();
 
 		// 50%の確率でダメージ足場を生成
 		std::uniform_int_distribution<int> dist01(0, 1);
 		if (dist01(randomEngine_) < 1) {
-			scale = {1.5f, 1.8f, 1.0f};
+			//scale = {1.5f, 1.8f, 1.0f};
+			scale = {1.0f, 1.0f, 1.0f};
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 
 			// プレイヤーの重力方向に応じて危険な面を設定
