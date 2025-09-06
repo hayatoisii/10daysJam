@@ -161,6 +161,7 @@ void GameScene::Update() {
 	// ゲーム時間の更新
 	gameTime_ += 1.0f / 60.0f; // 60FPS想定
 
+
 	// 速度倍率の計算（30秒ごとに0.1倍増加、最大3.0倍）
 	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.5f;
 	if (speedMultiplier_ > 100.0f) {
