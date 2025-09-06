@@ -4,7 +4,8 @@
 TitleScnce::~TitleScnce() {
 	delete titlemodel_;
 	delete titlemodelFont_;
-	delete TitleSkydome_;
+	delete modelSkydome_;
+	delete skydome_;
 	delete sprite_;
 	delete sprite2_;
 	delete sprite3_;
@@ -64,9 +65,6 @@ void TitleScnce::Initialize() {
 	// // パーティクル用モデルの読み込み
 	// particleModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 
-	titleskydome.Initialize();
-	Camera_.Initialize();
-
 	Timer_ = 0.0f;
 	isFinished_ = false;
 	isMovingDown = false; // 最初は上へ移動
@@ -75,7 +73,6 @@ void TitleScnce::Initialize() {
 	// タイトルを中央に寄せるために調整
 	titleWorldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
 	titleWorldTransformFont_.translation_ = {0.0f, 0.0f, 0.0f};
-	titleskydome.translation_ = {0.0f, 0.0f, 0.0f};
 
 	// スプライトの初期化
 	InitializeSprites();
@@ -138,6 +135,11 @@ void TitleScnce::Initialize() {
 	// カメラ初期化
 	camera_.Initialize();
 
+	// 天球の初期化
+	modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
+	skydome_ = new Skydome();
+	skydome_->Initialize(modelSkydome_, &camera_);
+
 	// プレイヤー初期化
 	Vector3 playerPos = {0, 0, 0};
 	player_ = new Player();
@@ -178,6 +180,9 @@ void TitleScnce::InitializeSprites() {
 }
 
 void TitleScnce::Update() {
+	// 天球の更新
+	skydome_->Update();
+
 	Timer_ += 1.0f;
 
 	// Enterキーでタイトル終了
@@ -427,6 +432,9 @@ void TitleScnce::Draw() {
 
 	// 3D描画前準備
 	Model::PreDraw(dxCommon->GetCommandList());
+
+	// 天球の描画
+	skydome_->Draw();
 
 	// 足場を描画
 	for (auto platform : platforms_) {

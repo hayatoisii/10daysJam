@@ -115,6 +115,7 @@
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SelectScene.cpp" />
+    <ClCompile Include="Skydome.cpp" />
     <ClCompile Include="TitleScnce.cpp" />
     <ClCompile Include="WorldTransformEx.cpp" />
   </ItemGroup>
@@ -203,6 +204,7 @@
     <ClInclude Include="Platform.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="SelectScene.h" />
+    <ClInclude Include="Skydome.h" />
     <ClInclude Include="TitleScnce.h" />
     <ClInclude Include="WorldTransformEx.h" />
   </ItemGroup>

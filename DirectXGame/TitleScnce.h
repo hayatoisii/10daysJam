@@ -1,9 +1,10 @@
 #pragma once
 
+#include "Skydome.h" // 天球のヘッダーファイルをインクルード
 #include "player.h"
 #include <KamataEngine.h>
 #include <math/Vector2.h>
-#include <random> // この行を追加しました
+#include <random>
 
 using namespace KamataEngine;
 
@@ -31,7 +32,6 @@ public:
 	void Draw();
 
 	bool IsSelectFinished() const { return isFinished_; }
-	bool IsGameFinished() const { return isGameFinished_; }
 
 	// 現在表示されているスプライトを管理する変数
 	size_t currentSpriteIndex = 0;
@@ -55,11 +55,8 @@ private:
 	DirectXCommon* dxCommon_ = nullptr;
 	WorldTransform titleWorldTransform_;
 	WorldTransform titleWorldTransformFont_;
-	WorldTransform titleskydome;
-	Camera Camera_;
 	Model* titlemodel_ = nullptr;
 	Model* titlemodelFont_ = nullptr;
-	Model* TitleSkydome_ = nullptr;
 	uint32_t textureHandle_ = 0;
 	Sprite* sprite_ = nullptr;
 	uint32_t textureHandle2_ = 0;
@@ -69,7 +66,9 @@ private:
 	uint32_t textureHandle4_ = 0;
 	Sprite* sprite4_ = nullptr;
 
+	// 天球
 	Model* modelSkydome_ = nullptr;
+	Skydome* skydome_ = nullptr;
 
 	Input* input_ = nullptr;
 	Audio* audio_ = nullptr;
