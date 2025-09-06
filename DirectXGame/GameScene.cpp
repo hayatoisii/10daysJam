@@ -40,8 +40,8 @@ void GameScene::Initialize() {
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
-	float windowWidth = (float)WinApp::kWindowWidth;
-	float windowHeight = (float)WinApp::kWindowHeight;
+	float windowWidth = 640;
+	float windowHeight = 720;
 
 	// 画像サイズを画面に合わせる
 	skySprite1_->SetSize({windowWidth, windowHeight});
