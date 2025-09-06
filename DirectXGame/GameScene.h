@@ -25,7 +25,8 @@ private:
 	WorldTransform endTransformRight_;
 
 	// 重力反転ライン用
-	KamataEngine::Model* modelGravityLine_ = nullptr;
+	KamataEngine::Model* modelGravityLineTop_ = nullptr;
+	KamataEngine::Model* modelGravityLineBottom_ = nullptr;
 	WorldTransform gravityLineTop_;
 	WorldTransform gravityLineBottom_;
 
@@ -39,7 +40,7 @@ private:
 	bool platformSideFlag = false;
 
 	// プラットフォーム生成間隔（秒）
-	const float platformSpawnInterval = 1.0f;
+	const float platformSpawnInterval = 0.8f;
 
 	// ゲーム時間と速度倍率
 	float gameTime_ = 0.0f;

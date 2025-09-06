@@ -29,8 +29,8 @@ void GameScene::Initialize() {
 	for (int i = 0; i < playerHP_; i++) {
 		WorldTransform* wt = new WorldTransform();
 		wt->Initialize();
-		wt->translation_ = {-18.0f + i * 2.0f, 18.0f, 0.0f};
-		wt->scale_ = {0.5f, 0.5f, 0.5f};
+		wt->translation_ = {-34.0f + i * 4.0f, 18.0f, 0.0f};
+		wt->scale_ = {1.5f, 1.5f, 0.5f};
 		wt->UpdateMatarix();
 		hpWorldTransforms_.push_back(wt);
 	}
@@ -50,16 +50,17 @@ void GameScene::Initialize() {
 	endTransformRight_.UpdateMatarix();
 
 	// 重力反転ライン用のcubeモデルを読み込み
-	modelGravityLine_ = KamataEngine::Model::CreateFromOBJ("GravityInversionTop", true);
+	modelGravityLineTop_ = KamataEngine::Model::CreateFromOBJ("GravityInversionTop", true);
+	modelGravityLineBottom_ = KamataEngine::Model::CreateFromOBJ("GravityInversionBottom", true); // 例：下部用のモデルファイル
 
 	// 上ライン（Y=25）に配置
 	gravityLineTop_.Initialize();
-	gravityLineTop_.translation_ = Vector3(0.0f, 15.0f, 0.0f);
+	gravityLineTop_.translation_ = Vector3(0.0f, 15.0f, 1.3f);
 	gravityLineTop_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
 
 	// 下ライン（Y=-25）に配置
 	gravityLineBottom_.Initialize();
-	gravityLineBottom_.translation_ = Vector3(0.0f, -15.0f, 0.0f);
+	gravityLineBottom_.translation_ = Vector3(0.0f, -15.0f, 1.3f);
 	gravityLineBottom_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
 
 	gravityLineTop_.UpdateMatarix();
@@ -129,13 +130,13 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 	// ゲーム時間の更新
 	gameTime_ += 1.0f / 60.0f; // 60FPS想定
-	
+
 	// 速度倍率の計算（30秒ごとに0.1倍増加、最大3.0倍）
 	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.1f;
 	if (speedMultiplier_ > 3.0f) {
 		speedMultiplier_ = 3.0f;
 	}
-	
+
 	// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
 
@@ -247,7 +248,7 @@ void GameScene::Update() {
 				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
 				Vector3 platformSize = platformAABB.GetMax() - platformAABB.GetMin();
 				float playerHalfHeight = playerSize.y * 0.5f;
-				//float platformHalfHeight = platformSize.y * 0.5f;
+				// float platformHalfHeight = platformSize.y * 0.5f;
 				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f; // 完全に上に配置
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
@@ -271,7 +272,7 @@ void GameScene::Update() {
 				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
 				Vector3 platformSize = platformAABB.GetMax() - platformAABB.GetMin();
 				float playerHalfHeight = playerSize.y * 0.5f;
-				//float platformHalfHeight = platformSize.y * 0.5f;
+				// float platformHalfHeight = platformSize.y * 0.5f;
 				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f; // 完全に下に配置
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
@@ -323,10 +324,12 @@ void GameScene::Draw() {
 		modelEnd_->Draw(endTransformRight_, camera_);
 	}
 
-	// 重力反転ラインを描画
-	if (modelGravityLine_) {
-		modelGravityLine_->Draw(gravityLineTop_, camera_);
-		modelGravityLine_->Draw(gravityLineBottom_, camera_);
+	// 上下の重力反転ラインをそれぞれ描画
+	if (modelGravityLineTop_) {
+		modelGravityLineTop_->Draw(gravityLineTop_, camera_);
+	}
+	if (modelGravityLineBottom_) {
+		modelGravityLineBottom_->Draw(gravityLineBottom_, camera_);
 	}
 
 	// HP描画
