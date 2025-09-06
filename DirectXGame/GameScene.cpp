@@ -318,92 +318,15 @@ void GameScene::Update() {
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
-
-		// そもそも衝突していなければ、この足場については何もしない
 		if (!playerAABB.IsColliding(platformAABB)) {
 			continue;
 		}
-
-		// --- 衝突している場合、どう解決するかを決定 ---
-
-		// プレイヤーの前フレームの位置を取得
-		Vector3 prevPlayerPos = player_->GetPrevPosition();
-		AABB prevPlayerAABB = player_->GetAABB();
-		prevPlayerAABB.Set(prevPlayerPos - player_->GetHalfSize(), prevPlayerPos + player_->GetHalfSize());
-
-		// --- 通常重力時の処理 ---
-		if (!player_->IsInversion()) {
-			bool isFallingDown = player_->GetVelocityY() <= 0;
-			bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y;
-
-			// 条件：落下中 かつ 前フレームで足場より上にいた -> これは「着地」
-			if (isFallingDown && wasAbove) {
-				Vector3 playerPos = player_->GetPosition();
-				playerPos.y = platformAABB.GetMax().y + player_->GetHalfSize().y; // Y座標を補正
-				player_->SetPosition(playerPos);
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
-
-				// ダメージ判定
-				if (platform->GetDamageDirection() == DamageDirection::TOP) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								int hpIndex = (int)hpWorldTransforms_.size() - 1 - playerHP_;
-								hpWorldTransforms_[hpIndex]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[hpIndex]->UpdateMatarix();
-							}
-						}
-					}
-				}
-
-				continue; // ★重要: 着地処理が完了したので、この足場との判定はこれで終了
-			}
-		}
-		// --- 重力反転時の処理 ---
-		else {
-			bool isFallingUp = player_->GetVelocityY() >= 0;
-			bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y;
-
-			// 条件：上昇中 かつ 前フレームで足場より下にいた -> これは「天井への着地」
-			if (isFallingUp && wasBelow) {
-				Vector3 playerPos = player_->GetPosition();
-				playerPos.y = platformAABB.GetMin().y - player_->GetHalfSize().y; // Y座標を補正
-				player_->SetPosition(playerPos);
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
-
-				// ダメージ判定
-				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								int hpIndex = (int)hpWorldTransforms_.size() - 1 - playerHP_;
-								hpWorldTransforms_[hpIndex]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[hpIndex]->UpdateMatarix();
-							}
-						}
-					}
-				}
-
-				continue; // ★重要: 着地処理が完了したので、この足場との判定はこれで終了
-			}
-		}
-
-		// --- 上記の「着地」条件に当てはまらなかった場合の衝突（横、下から頭を打つなど） ---
-		// めり込み量で押し出す
 		Vector3 playerPos = player_->GetPosition();
 		Vector3 platPos = platform->GetWorldPosition();
 		Vector3 overlap;
 		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
 		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
-
 		if (overlap.x < overlap.y) {
-			// 横からの衝突
 			if (playerPos.x < platPos.x) {
 				playerPos.x -= overlap.x;
 			} else {
@@ -411,23 +334,47 @@ void GameScene::Update() {
 			}
 			player_->SetVelocityX(0.0f);
 		} else {
-			// 縦からの衝突（着地ではない）
-			if (playerPos.y < platPos.y) {
-				// 下から頭を打った (通常時)
-				playerPos.y -= overlap.y;
-				if (player_->GetVelocityY() > 0) {
-					player_->SetVelocityY(0.0f);
+			if (playerPos.y > platPos.y) {
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f;
+				player_->SetVelocityY(0.0f);
+				player_->SetOnGround(true);
+				if (platform->GetDamageDirection() == DamageDirection::TOP) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
 				}
 			} else {
-				// 上から足がめりこんだ (反転時)
-				playerPos.y += overlap.y;
-				if (player_->GetVelocityY() < 0) {
-					player_->SetVelocityY(0.0f);
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f;
+				player_->SetVelocityY(0.0f);
+				player_->SetOnGround(true);
+				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
 				}
 			}
 		}
 		player_->SetPosition(playerPos);
 	}
+
 	// ▼▼▼ ここから修正・追加 ▼▼▼
 	// HPが0以下になったらゲームオーバーフラグを立てる
 	if (playerHP_ <= 0) {
@@ -453,6 +400,7 @@ void GameScene::Update() {
 		prevScore_ = score_;
 	}
 }
+
 
 void GameScene::Draw() {
 	// (この関数の中身は変更ありません)

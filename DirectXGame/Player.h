@@ -80,7 +80,7 @@ private:
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;
-	int maxJumpCount_ = 2; // ← ここを2にすれば二段ジャンプ
+	int maxJumpCount_ = 1; // ← ここを2にすれば二段ジャンプ
 
 	bool isJumping_ = false;
 	bool inversion = false;
