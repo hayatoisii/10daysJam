@@ -186,9 +186,9 @@ void GameScene::Initialize() {
 
 void GameScene::Update() {
 	gameTime_ += 1.0f / 60.0f;
-	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.5f;
-	if (speedMultiplier_ > 100.0f) {
-		speedMultiplier_ = 100.0f;
+	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 1.0f;
+	if (speedMultiplier_ > 200.0f) {
+		speedMultiplier_ = 200.0f;
 	}
 	platformSpawnTimer += 1.0f / 60.0f;
 	if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
@@ -286,20 +286,30 @@ void GameScene::Update() {
 	// 画面外の足場を削除
 	for (auto it = platforms_.begin(); it != platforms_.end();) {
 		Vector3 pos = (*it)->GetWorldPosition();
+		bool erased = false; // 削除されたかどうかのフラグ
+
 		if (player_->IsInversion()) {
-			if (pos.y > 22.0f) {
-				delete *it;
-				it = platforms_.erase(it);
-				continue;
-			}
-		} else {
+			// ▼▼▼ 条件を修正 ▼▼▼
+			// プレイヤーが上向き ⇒ 足場は下にスクロールするので、画面の下端で消す
 			if (pos.y < -22.0f) {
 				delete *it;
 				it = platforms_.erase(it);
-				continue;
+				erased = true;
+			}
+		} else {
+			// ▼▼▼ 条件を修正 ▼▼▼
+			// プレイヤーが下向き ⇒ 足場は上にスクロールするので、画面の上端で消す
+			if (pos.y > 22.0f) {
+				delete *it;
+				it = platforms_.erase(it);
+				erased = true;
 			}
 		}
-		++it;
+
+		// 削除されなかった場合のみ、イテレータを進める
+		if (!erased) {
+			++it;
+		}
 	}
 
 	player_->Update();
@@ -368,7 +378,7 @@ void GameScene::Update() {
 	// ▼▼▼ ここから修正・追加 ▼▼▼
 	// HPが0以下になったらゲームオーバーフラグを立てる
 	if (playerHP_ <= 0) {
-		isGameOver_ = true;
+		//isGameOver_ = true;
 	}
 	// ▲▲▲ ここまで修正・追加 ▲▲▲
 	// プレイヤーの現在位置
