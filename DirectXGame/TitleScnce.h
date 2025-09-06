@@ -1,11 +1,11 @@
 #pragma once
-#include <2d/Sprite.h>
-#include <3d/Camera.h>
-#include <3d/Model.h>
-#include <3d/WorldTransform.h>
+
+#include "player.h"
 #include <KamataEngine.h>
-#include <audio/Audio.h>
 #include <math/Vector2.h>
+#include <random> // この行を追加しました
+
+using namespace KamataEngine;
 
 /// <summary>
 /// タイトルシーン
@@ -52,27 +52,27 @@ private:
 
 	bool isFinished_ = false;
 	bool isGameFinished_ = false;
-	KamataEngine::DirectXCommon* dxCommon_ = nullptr;
-	KamataEngine::WorldTransform titleWorldTransform_;
-	KamataEngine::WorldTransform titleWorldTransformFont_;
-	KamataEngine::WorldTransform titleskydome;
-	KamataEngine::Camera Camera_;
-	KamataEngine::Model* titlemodel_ = nullptr;
-	KamataEngine::Model* titlemodelFont_ = nullptr;
-	KamataEngine::Model* TitleSkydome_ = nullptr;
+	DirectXCommon* dxCommon_ = nullptr;
+	WorldTransform titleWorldTransform_;
+	WorldTransform titleWorldTransformFont_;
+	WorldTransform titleskydome;
+	Camera Camera_;
+	Model* titlemodel_ = nullptr;
+	Model* titlemodelFont_ = nullptr;
+	Model* TitleSkydome_ = nullptr;
 	uint32_t textureHandle_ = 0;
-	KamataEngine::Sprite* sprite_ = nullptr;
+	Sprite* sprite_ = nullptr;
 	uint32_t textureHandle2_ = 0;
-	KamataEngine::Sprite* sprite2_ = nullptr;
+	Sprite* sprite2_ = nullptr;
 	uint32_t textureHandle3_ = 0;
-	KamataEngine::Sprite* sprite3_ = nullptr;
+	Sprite* sprite3_ = nullptr;
 	uint32_t textureHandle4_ = 0;
-	KamataEngine::Sprite* sprite4_ = nullptr;
+	Sprite* sprite4_ = nullptr;
 
-	KamataEngine::Model* modelSkydome_ = nullptr;
+	Model* modelSkydome_ = nullptr;
 
-	KamataEngine::Input* input_ = nullptr;
-	KamataEngine::Audio* audio_ = nullptr;
+	Input* input_ = nullptr;
+	Audio* audio_ = nullptr;
 
 	uint32_t TitleSEHandle_ = 0;
 	uint32_t TitleSEHandle2_ = 0;
@@ -91,7 +91,7 @@ private:
 	const float SCREEN_BOTTOM_Y = 400.0f; // 画面下端付近
 
 	// スプライト2用のワールドトランスフォーム
-	KamataEngine::WorldTransform sprite2WorldTransform_;
+	WorldTransform sprite2WorldTransform_;
 
 	// イージング用の変数
 	bool isFlipping = false;   // 反転アニメーション中か
@@ -103,8 +103,46 @@ private:
 	float EaseInOutQuad(float t);
 	float EaseOutBounce(float t);
 
-	// // パーティクル管理用コンテナ
-	// std::vector<Particle*> particles_;
-	// // パーティクル用モデル
-	// Model* particleModel_ = nullptr;
+	Model* modelEnd_ = nullptr;
+	WorldTransform endTransformLeft_;
+	WorldTransform endTransformRight_;
+
+	// プラットフォーム生成タイマー（経過時間）
+	float platformSpawnTimer = 0.0f;
+
+	// 最後に生成したプラットフォームのX座標
+	float lastPlatformX = 0.0f;
+
+	// プラットフォームの左右生成フラグ（true:右、false:左）
+	bool platformSideFlag = false;
+
+	// プラットフォーム生成間隔（秒）
+	const float platformSpawnInterval = 1.2f;
+
+	const float minPlatformDistance = 4.0f;
+
+	int playerHP_ = 3;
+
+	// HP用モデル
+	Model* hpModel_ = nullptr;
+	// HP用ワールドトランスフォーム
+	std::vector<WorldTransform*> hpWorldTransforms_;
+	// プレイヤーオブジェクトへのポインタ
+	Player* player_ = nullptr;
+	// プレイヤーモデル
+	Model* modelPlayer_ = nullptr;
+	// プラットフォームモデル
+	Model* modelPlatform_ = nullptr;
+	// カメラ
+	Camera camera_;
+	// ワールド変換（汎用）
+	WorldTransform worldTransform;
+	// 動的に生成されるプラットフォームのコンテナ
+	std::vector<Platform*> platforms_;
+	// 乱数生成エンジン（メルセンヌ・ツイスタ）
+	std::mt19937 randomEngine_;
+	// ゲームオーバーフラグ
+	bool isGameOver_ = false;
+	// ゲームクリアフラグ
+	bool isGameClear_ = false;
 };
