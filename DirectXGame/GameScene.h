@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "BIt_Map_Font.h"
 #include <random>
+#include <vector>
 
 class GameScene {
 public:
@@ -24,58 +25,9 @@ public:
 	bool IsGameClear() const { return isGameClear_; }
 
 private:
-
-	// プレイヤーオブジェクトへのポインタ
-	Player* player_ = nullptr;
-
-	// プレイヤーモデル
-	KamataEngine::Model* modelPlayer_ = nullptr;
-
-	// プラットフォームモデル
-	KamataEngine::Model* modelPlatform_ = nullptr;
-
-	// カメラ
-	KamataEngine::Camera camera_;
-
-	// ワールド変換（汎用）
-	WorldTransform worldTransform;
-
-	// 動的に生成されるプラットフォームのコンテナ
-	std::vector<Platform*> platforms_;
-
-	// 乱数生成エンジン（メルセンヌ・ツイスタ）
-	std::mt19937 randomEngine_;
-	std::vector<WorldTransform*> hpWorldTransforms_;
-
-	// ゲーム状態フラグ
-	bool isGameOver_ = false;
-	bool isGameClear_ = false;
-
-	// プレイヤーのX軸移動範囲を可視化するモデル
 	KamataEngine::Model* modelEnd_ = nullptr;
 	WorldTransform endTransformLeft_;
 	WorldTransform endTransformRight_;
-
-	// ▼▼▼ 重力反転ライン用スプライトのメンバ変数を追加 ▼▼▼
-	uint32_t spriteGravityLineTopHandle_ = 0;
-	uint32_t spriteGravityLineBottomHandle_ = 0;
-	Sprite* spriteGravityLineTop_ = nullptr;
-	Sprite* spriteGravityLineBottom_ = nullptr;
-
-	uint32_t skyTextureHandle_ = 0;
-	Sprite* skySprite1_ = nullptr;
-	Sprite* skySprite2_ = nullptr;
-
-	// HP用モデル
-	Model* hpModel_ = nullptr;
-
-	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
-	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
-
-	KamataEngine::Model* modelBackground_ = nullptr;
-	WorldTransform transformBackground_;
-
-	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
 
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 1.5f;
@@ -97,12 +49,30 @@ private:
 
 	int playerHP_ = 3;
 
-	const int platformCount = 1; // 足場の数
+    // HP用モデル
+    KamataEngine::Model* hpModel_ = nullptr;
 
-	// スコア表示用フォント
-	BIt_Map_Font* font_ = nullptr;
-	int score_ = 0;
-	int prevScore_ = 0; // 追加
-	Vector3 prevPlayerPos_; // 前フレームのプレイヤー位置
-	bool prevOnGround_ = false; // 前フレームの地面判定
+    // HP用ワールドトランスフォーム
+	std::vector<WorldTransform*> hpWorldTransforms_;
+
+	// プレイヤーオブジェクトへのポインタ
+	Player* player_ = nullptr;
+
+	// プレイヤーモデル
+	Model* modelPlayer_ = nullptr;
+
+	// プラットフォームモデル
+	Model* modelPlatform_ = nullptr;
+
+	// カメラ
+	Camera camera_;
+
+	// ワールド変換（汎用）
+	WorldTransform worldTransform;
+
+	// 動的に生成されるプラットフォームのコンテナ
+	std::vector<Platform*> platforms_;
+
+	// 乱数生成エンジン（メルセンヌ・ツイスタ）
+	std::mt19937 randomEngine_;
 };
