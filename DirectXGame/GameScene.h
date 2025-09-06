@@ -3,6 +3,7 @@
 #include "Platform.h"
 #include "Player.h"
 #include <random>
+#include <vector>
 
 class GameScene {
 public:
@@ -24,11 +25,15 @@ private:
 	WorldTransform endTransformLeft_;
 	WorldTransform endTransformRight_;
 
-	// 重力反転ライン用
-	KamataEngine::Model* modelGravityLineTop_ = nullptr;
-	KamataEngine::Model* modelGravityLineBottom_ = nullptr;
-	WorldTransform gravityLineTop_;
-	WorldTransform gravityLineBottom_;
+	// ▼▼▼ 重力反転ライン用スプライトのメンバ変数を追加 ▼▼▼
+	uint32_t spriteGravityLineTopHandle_ = 0;
+	uint32_t spriteGravityLineBottomHandle_ = 0;
+	Sprite* spriteGravityLineTop_ = nullptr;
+	Sprite* spriteGravityLineBottom_ = nullptr;
+
+	uint32_t skyTextureHandle_ = 0;
+	Sprite* skySprite1_ = nullptr;
+	Sprite* skySprite2_ = nullptr;
 
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 1.5f;
@@ -58,7 +63,10 @@ private:
 	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
 	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
 
-	const float spawnRateModifier = 1.2f; // ★この値を大きくすると、生成が遅くなります
+	KamataEngine::Model* modelBackground_ = nullptr;
+	WorldTransform transformBackground_;
+
+	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
 	
     // HP用ワールドトランスフォーム
 	std::vector<WorldTransform*> hpWorldTransforms_;

@@ -9,6 +9,9 @@ GameScene::~GameScene() {
 	for (auto wt : hpWorldTransforms_) {
 		delete wt;
 	}
+
+	delete skySprite1_;
+	delete skySprite2_;
 }
 
 void GameScene::Initialize() {
@@ -25,11 +28,40 @@ void GameScene::Initialize() {
 	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);       // 上向きダメージモデルのファイル名にしてください
 	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true); // 下向きダメージモデルのファイル名にしてください
 
+	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
+	transformBackground_.Initialize();
+	// Z軸を奥にずらして配置（数値が大きいほど奥になります）
+	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
+	transformBackground_.UpdateMatarix();
+
+
+		// ▼▼▼ 「sky」背景スプライトの初期化を追加 ▼▼▼
+	skyTextureHandle_ = TextureManager::Load("sky.png");
+	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
+	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
+
+	float windowWidth = (float)WinApp::kWindowWidth;
+	float windowHeight = (float)WinApp::kWindowHeight;
+
+	// 画像サイズを画面に合わせる
+	skySprite1_->SetSize({windowWidth, windowHeight});
+	skySprite2_->SetSize({windowWidth, windowHeight});
+
+	// アンカーポイント（基準点）を画像の中心に設定
+	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
+	skySprite2_->SetAnchorPoint({0.5f, 0.5f});
+
+	// 1枚目を画面ぴったりに配置
+	skySprite1_->SetPosition({windowWidth , windowHeight});
+	// 2枚目を1枚目のすぐ上に、画面外に配置
+	skySprite2_->SetPosition({windowWidth, windowHeight - windowHeight});
+	// ▲▲▲ ---------------------------------- ▲▲▲
+
 	// HPワールドトランスフォームを3個作成
 	for (int i = 0; i < playerHP_; i++) {
 		WorldTransform* wt = new WorldTransform();
 		wt->Initialize();
-		wt->translation_ = {-34.0f + i * 4.0f, 18.0f, 0.0f};
+		wt->translation_ = {-32.5f + i * 4.0f, 18.0f, 0.0f};
 		wt->scale_ = {1.5f, 1.5f, 0.5f};
 		wt->UpdateMatarix();
 		hpWorldTransforms_.push_back(wt);
@@ -40,31 +72,28 @@ void GameScene::Initialize() {
 
 	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
-	endTransformLeft_.translation_ = Vector3(-16.3f, 0.0f, 0.0f);//15でもいいかも
+	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f); // 15でもいいかも 16  20
 
 	// 右端（20, 0, 0）に配置
 	endTransformRight_.Initialize();
-	endTransformRight_.translation_ = Vector3(16.3f, 0.0f, 0.0f);//15
+	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f); // 15  16  20
 
 	endTransformLeft_.UpdateMatarix();
 	endTransformRight_.UpdateMatarix();
 
-	// 重力反転ライン用のcubeモデルを読み込み
-	modelGravityLineTop_ = KamataEngine::Model::CreateFromOBJ("GravityInversionTop", true);
-	modelGravityLineBottom_ = KamataEngine::Model::CreateFromOBJ("GravityInversionBottom", true); // 例：下部用のモデルファイル
+	// ▼▼▼ 重力反転ライン用スプライトの初期化を追加 ▼▼▼
+	// 上ラインのスプライト（適切な画像ファイル名に置き換えてください。例: "gravityLineTop.png"）
+	spriteGravityLineTopHandle_ = TextureManager::Load("Gravityline.png");
+	spriteGravityLineTop_ = Sprite::Create(spriteGravityLineTopHandle_, {0.0f, 0.0f});               // 一旦白い画像で仮作成
+	spriteGravityLineTop_->SetSize({640.0f, 100.0f});                                                 // スクリーンの幅いっぱいに細い線
+	spriteGravityLineTop_->SetPosition({320.0f, -4.0f});                                             // 画面中央X、上部のY座標
 
-	// 上ライン（Y=25）に配置
-	gravityLineTop_.Initialize();
-	gravityLineTop_.translation_ = Vector3(0.0f, 15.0f, 1.3f);
-	gravityLineTop_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
-
-	// 下ライン（Y=-25）に配置
-	gravityLineBottom_.Initialize();
-	gravityLineBottom_.translation_ = Vector3(0.0f, -15.0f, 1.3f);
-	gravityLineBottom_.scale_ = Vector3(1.0f, 1.0f, 1.0f); // 通常サイズのcube
-
-	gravityLineTop_.UpdateMatarix();
-	gravityLineBottom_.UpdateMatarix();
+	// 下ラインのスプライト
+	spriteGravityLineBottomHandle_ = TextureManager::Load("Gravityline.png");
+	spriteGravityLineBottom_ = Sprite::Create(spriteGravityLineBottomHandle_, {0.0f, 0.0f});            // 一旦白い画像で仮作成
+	spriteGravityLineBottom_->SetSize({640.0f, 100.0f});                                                 // スクリーンの幅いっぱいに細い線
+	spriteGravityLineBottom_->SetPosition({320.0f, 625.0f});              // 画面中央X、下部のY座標
+	// ▲▲▲ ---------------------------------- ▲▲▲
 
 	// カメラ初期化
 	camera_.Initialize();
@@ -80,8 +109,8 @@ void GameScene::Initialize() {
 	{
 		Platform* firstPlatform = new Platform();
 		Vector3 pos = {0.0f, -2.0f, 0.0f};
-		//Vector3 scale = {1.5f, 1.2f, 1.0f};
-		Vector3 scale = {1.0f, 1.0f, 1.0f};
+		// Vector3 scale = {1.5f, 1.2f, 1.0f};
+		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
 		// Initializeに3種類のモデルを全て渡す
 		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 		firstPlatform->SetDamageDirection(DamageDirection::NONE); // 無害
@@ -148,25 +177,25 @@ void GameScene::Update() {
 		// X座標を左右交互の範囲で決める
 		float x;
 		if (platformSideFlag) {
-			std::uniform_real_distribution<float> posX(-14.0f, 0.0f);// 13でもいいかも
+			std::uniform_real_distribution<float> posX(-17.0f, 0.0f); // 13でもいいかも　14　　　20
 			x = posX(randomEngine_);
 		} else {
-			std::uniform_real_distribution<float> posX(0.0f, 14.0f);// 13ｄもいいかも
+			std::uniform_real_distribution<float> posX(0.0f, 17.0f); // 13ｄもいいかも　14　　　20
 			x = posX(randomEngine_);
 		}
 		platformSideFlag = !platformSideFlag;
 
-		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
-		//Vector3 scale = {1.5f, 1.2f, 1.0f};
-		Vector3 scale = {1.0f, 1.0f, 1.0f};
+		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
+		// Vector3 scale = {1.5f, 1.2f, 1.0f};
+		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
 
 		Platform* platform = new Platform();
 
-        // 60%の確率でダメージ足場を生成
+		// 60%の確率でダメージ足場を生成
 		std::uniform_int_distribution<int> dist10(0, 9); // 0から9の乱数を生成
 		if (dist10(randomEngine_) < 6) {
-			//scale = {1.5f, 1.8f, 1.0f};
-			scale = {1.0f, 1.0f, 1.0f};
+			// scale = {1.5f, 1.8f, 1.0f};
+			scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
 
 			// プレイヤーの重力方向に応じて危険な面を設定
@@ -195,6 +224,43 @@ void GameScene::Update() {
 	for (auto platform : platforms_) {
 		platform->SetScrollSpeed(scrollSpeed);
 		platform->Update();
+	}
+
+	if (skySprite1_ && skySprite2_) {
+		// スプライトはピクセル単位で動くため、速度を調整
+		const float spriteSpeedModifier = 17.0f;
+		float spriteScrollSpeed = -scrollSpeed * spriteSpeedModifier;
+
+		// 1枚目のスプライトを動かす
+		Vector2 skyPos1 = skySprite1_->GetPosition();
+		skyPos1.y += spriteScrollSpeed;
+		skySprite1_->SetPosition(skyPos1);
+
+		// 2枚目のスプライトを動かす
+		Vector2 skyPos2 = skySprite2_->GetPosition();
+		skyPos2.y += spriteScrollSpeed;
+		skySprite2_->SetPosition(skyPos2);
+
+		// --- ループ処理 ---
+		float windowHeight = (float)WinApp::kWindowHeight;
+		// スクロールが下向きの場合
+		if (spriteScrollSpeed > 0) {
+			if (skyPos1.y > windowHeight + windowHeight / 2.0f) {
+				skySprite1_->SetPosition({skyPos1.x, skyPos2.y - windowHeight});
+			}
+			if (skyPos2.y > windowHeight + windowHeight / 2.0f) {
+				skySprite2_->SetPosition({skyPos2.x, skyPos1.y - windowHeight});
+			}
+		}
+		// スクロールが上向きの場合
+		else {
+			if (skyPos1.y < -windowHeight / 2.0f) {
+				skySprite1_->SetPosition({skyPos1.x, skyPos2.y + windowHeight});
+			}
+			if (skyPos2.y < -windowHeight / 2.0f) {
+				skySprite2_->SetPosition({skyPos2.x, skyPos1.y + windowHeight});
+			}
+		}
 	}
 
 	// 画面外の足場を削除
@@ -303,9 +369,37 @@ void GameScene::Update() {
 void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
+	// 3D描画前準備
+	Model::PreDraw(dxCommon->GetCommandList());
+
+	if (modelBackground_) {
+		modelBackground_->Draw(transformBackground_, camera_);
+	}
+
+	Model::PostDraw();
+
+	dxCommon->ClearDepthBuffer();
+
 	// 2D描画前準備
 	Sprite::PreDraw(dxCommon->GetCommandList());
 	// 2D描画（必要ならここに描画処理を書く）
+
+	// ▼▼▼ 「sky」の描画を最初に追加 ▼▼▼
+	if (skySprite1_) {
+		skySprite1_->Draw();
+	}
+	if (skySprite2_) {
+		skySprite2_->Draw();
+	}
+
+	// ▼▼▼ 重力反転ライン用スプライトの描画を追加 ▼▼▼
+	if (spriteGravityLineTop_) {
+		spriteGravityLineTop_->Draw();
+	}
+	if (spriteGravityLineBottom_) {
+		spriteGravityLineBottom_->Draw();
+	}
+
 	Sprite::PostDraw();
 
 	// 深度バッファクリア
@@ -325,14 +419,6 @@ void GameScene::Draw() {
 	if (modelEnd_) {
 		modelEnd_->Draw(endTransformLeft_, camera_);
 		modelEnd_->Draw(endTransformRight_, camera_);
-	}
-
-	// 上下の重力反転ラインをそれぞれ描画
-	if (modelGravityLineTop_) {
-		modelGravityLineTop_->Draw(gravityLineTop_, camera_);
-	}
-	if (modelGravityLineBottom_) {
-		modelGravityLineBottom_->Draw(gravityLineBottom_, camera_);
 	}
 
 	// HP描画

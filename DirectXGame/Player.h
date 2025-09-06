@@ -53,11 +53,11 @@ private:
 	float gravity = -0.07f;//これいじっても変わらないよん
 
 	// ジャンプ初速度
-	const float jumpPower = 0.73f;
+	const float jumpPower = 0.76f;//0.73でもいいかも 75
 
 	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
-	const float minPlatformX = -14.0f; // 左端13でもいいかも
-	const float maxPlatformX = 14.0f;  // 右端1313131313
+	const float minPlatformX = -17.0f; // 左端13でもいいかも 14  20
+	const float maxPlatformX = 17.0f;  // 右端1313131313   14  20
  
 	bool isOnGround_ = false;
 

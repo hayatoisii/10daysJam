@@ -82,6 +82,7 @@ void Player::Update() {
 			worldTransform_.translation_.y = -16.7f; // 境界線の少し手前に配置
 			velocityY_ = 0.0f; // 完全に停止
 			SetOnGround(true);
+			gravity = 0.0f;
 			inversion = true;
 			targetGravity = 0.05f; // 目標重力を上向きに
 			platformScrollSpeed = -fabs(platformScrollSpeed);
@@ -91,6 +92,7 @@ void Player::Update() {
 			worldTransform_.translation_.y = 16.7f; // 境界線の少し手前に配置
 			velocityY_ = 0.0f; // 完全に停止
 			SetOnGround(true);
+			gravity = 0.0f;
 			inversion = false;
 			targetGravity = -0.05f; // 目標重力を下向きに
 			platformScrollSpeed = fabs(platformScrollSpeed);
