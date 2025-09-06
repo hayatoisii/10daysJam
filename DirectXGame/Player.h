@@ -41,6 +41,9 @@ public:
 	// 無敵状態かどうかを返す関数
 	bool IsInvincible() const;
 
+	Vector3 GetPrevPosition() const { return prevPosition_; } // ▼▼▼ 追加 ▼▼▼
+	Vector3 GetHalfSize() const { return halfSize_; }         // ▼▼▼ 追加 ▼▼▼
+
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -98,6 +101,7 @@ private:
 	WorldTransform worldTransform_;
 	AABB aabb_;
 	Vector3 halfSize_{0.5f, 0.5f, 0.5f};
+	Vector3 prevPosition_;
 
 	bool onGround_ = false; // 地面にいるかどうか
 };

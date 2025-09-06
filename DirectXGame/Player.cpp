@@ -18,6 +18,7 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 }
 
 void Player::Update() {
+	prevPosition_ = worldTransform_.translation_; // ▼▼▼ この行をUpdate関数の最初に追加 ▼▼▼
 
 	// 無敵時間中の処理
 	if (isInvincible_) {
