@@ -78,8 +78,8 @@ void Player::Update() {
 
 	// ワールド上下端で反転（慣性を大幅に減らして境界線直前で停止）
 	if (!inversion) {
-		if (worldTransform_.translation_.y <= -14.5f) { // 境界線の少し手前で反転
-			worldTransform_.translation_.y = -14.5f; // 境界線の少し手前に配置
+		if (worldTransform_.translation_.y <= -16.7f) { // 境界線の少し手前で反転
+			worldTransform_.translation_.y = -16.7f; // 境界線の少し手前に配置
 			velocityY_ = 0.0f; // 完全に停止
 			SetOnGround(true);
 			inversion = true;
@@ -87,8 +87,8 @@ void Player::Update() {
 			platformScrollSpeed = -fabs(platformScrollSpeed);
 		}
 	} else {
-		if (worldTransform_.translation_.y >= 14.5f) { // 境界線の少し手前で反転
-			worldTransform_.translation_.y = 14.5f; // 境界線の少し手前に配置
+		if (worldTransform_.translation_.y >= 16.7f) { // 境界線の少し手前で反転
+			worldTransform_.translation_.y = 16.7f; // 境界線の少し手前に配置
 			velocityY_ = 0.0f; // 完全に停止
 			SetOnGround(true);
 			inversion = false;

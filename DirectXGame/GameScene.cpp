@@ -50,7 +50,7 @@ void GameScene::Initialize() {
 	endTransformRight_.UpdateMatarix();
 
 	// 重力反転ライン用のcubeモデルを読み込み
-	modelGravityLine_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+	modelGravityLine_ = KamataEngine::Model::CreateFromOBJ("GravityInversionTop", true);
 
 	// 上ライン（Y=25）に配置
 	gravityLineTop_.Initialize();
