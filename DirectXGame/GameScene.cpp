@@ -170,6 +170,7 @@ void GameScene::Initialize() {
 	font_->Initialize();
 }
 
+
 void GameScene::Update() {
 	// (Update関数の前半は変更ありません)
 	gameTime_ += 1.0f / 60.0f;
