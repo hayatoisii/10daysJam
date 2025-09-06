@@ -1,21 +1,70 @@
 #include "Platform.h"
 
 // プラットフォームの初期化
-void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* model, Camera* camera) {
+void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Camera* camera) {
 	worldTransform_.Initialize();
-	worldTransform_.translation_ = pos; // 位置設定
-	worldTransform_.scale_ = scale;     // スケール設定
-	model_ = model;
-	camera_ = camera;
+	worldTransform_.translation_ = pos;
+	worldTransform_.scale_ = scale;
+	// Keep an internal copy of scale for AABB updates
 	scale_ = scale;
+	worldTransform_.UpdateMatarix();
+	// 初期AABBもUpdateと同じ式で計算し、ダメージ足場ならオフセット
+	{
+		Vector3 initPos = pos;
+		Vector3 baseHalf = (baseSize_ * scale_) * 0.5f;
+		Vector3 minV = initPos - baseHalf;
+		Vector3 maxV = initPos + baseHalf;
+		if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
+			// 片側のみ高さを拡張/縮小（危険面の方向に拡張）+ 安全側調整
+			float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
+			if (delta > 0.0f) {
+				if (damageDirection_ == DamageDirection::TOP) {
+					maxV.y += delta;
+				} else {
+					minV.y -= delta;
+				}
+			} else if (delta < 0.0f) {
+				float shrink = -delta;
+				if (damageDirection_ == DamageDirection::TOP) {
+					maxV.y -= shrink;
+				} else {
+					minV.y += shrink;
+				}
+			}
+			// 安全側（反対側）をスケール
+			float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
+			if (safeDelta < 0.0f) {
+				float safeShrink = -safeDelta;
+				if (damageDirection_ == DamageDirection::TOP) {
+					minV.y += safeShrink;
+				} else {
+					maxV.y -= safeShrink;
+				}
+			} else if (safeDelta > 0.0f) {
+				if (damageDirection_ == DamageDirection::TOP) {
+					minV.y -= safeDelta;
+				} else {
+					maxV.y += safeDelta;
+				}
+			}
+			// オフセット（TOPは上へ、BOTTOMは下へ）
+			if (damageDirection_ == DamageDirection::TOP) {
+				minV.y += damageColliderYOffset_;
+				maxV.y += damageColliderYOffset_;
+			} else {
+				minV.y -= damageColliderYOffset_;
+				maxV.y -= damageColliderYOffset_;
+			}
+		}
+		aabb_.Set(minV, maxV);
+	}
+	this->camera_ = camera;
 
-	// AABB（当たり判定ボックス）初期化
-	// 基準サイズにスケールを乗算し半分のサイズを計算
-	Vector3 halfSize = (baseSize_ * scale_) * 0.5f;
-	aabb_.Set(pos - halfSize, pos + halfSize);
+	// 3つのモデルへのポインタを保持
+	this->normalModel_ = normalModel;
+	this->damageTopModel_ = damageTopModel;
+	this->damageBottomModel_ = damageBottomModel;
 }
-
-
 
 // スクロール速度の設定
 void Platform::SetScrollSpeed(float speed) { platformScrollSpeed = speed; }
@@ -30,16 +79,81 @@ void Platform::Update() {
 
 	// AABBを現在の位置・スケールに合わせて更新
 	Vector3 pos = worldTransform_.translation_;
-	Vector3 halfSize = (baseSize_ * scale_) * 0.5f;
-	aabb_.Set(pos - halfSize, pos + halfSize);
+	Vector3 baseHalf = (baseSize_ * scale_) * 0.5f;
+	Vector3 minV = pos - baseHalf;
+	Vector3 maxV = pos + baseHalf;
+	if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
+		float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
+		if (delta > 0.0f) {
+			if (damageDirection_ == DamageDirection::TOP) {
+				maxV.y += delta;
+			} else {
+				minV.y -= delta;
+			}
+		} else if (delta < 0.0f) {
+			float shrink = -delta;
+			if (damageDirection_ == DamageDirection::TOP) {
+				maxV.y -= shrink;
+			} else {
+				minV.y += shrink;
+			}
+		}
+		// 安全側（反対側）をスケール
+		float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
+		if (safeDelta < 0.0f) {
+			float safeShrink = -safeDelta;
+			if (damageDirection_ == DamageDirection::TOP) {
+				minV.y += safeShrink;
+			} else {
+				maxV.y -= safeShrink;
+			}
+		} else if (safeDelta > 0.0f) {
+			if (damageDirection_ == DamageDirection::TOP) {
+				minV.y -= safeDelta;
+			} else {
+				maxV.y += safeDelta;
+			}
+		}
+		// オフセット（TOPは上へ、BOTTOMは下へ）
+		if (damageDirection_ == DamageDirection::TOP) {
+			minV.y += damageColliderYOffset_;
+			maxV.y += damageColliderYOffset_;
+		} else {
+			minV.y -= damageColliderYOffset_;
+			maxV.y -= damageColliderYOffset_;
+		}
+	}
+	aabb_.Set(minV, maxV);
 
 	// ワールド行列の更新
 	worldTransform_.UpdateMatarix();
 }
 
-// プラットフォームの描画
+// Platform.cpp
+
 void Platform::Draw() {
-	if (model_) {
-		model_->Draw(worldTransform_, *camera_);
+	// どのモデルを描画するかを damageDirection_ に基づいて決定する
+	switch (damageDirection_) {
+	case DamageDirection::TOP:
+		// 上面が危険な場合 -> 上向きダメージモデルを描画
+		if (damageTopModel_) {
+			damageTopModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
+
+	case DamageDirection::BOTTOM:
+		// 下面が危険な場合 -> 下向きダメージモデルを描画
+		if (damageBottomModel_) {
+			damageBottomModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
+
+	case DamageDirection::NONE:
+	default:
+		// 無害な場合 -> 通常モデルを描画
+		if (normalModel_) {
+			normalModel_->Draw(worldTransform_, *camera_);
+		}
+		break;
 	}
 }

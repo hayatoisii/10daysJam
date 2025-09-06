@@ -14,9 +14,6 @@ public:
 	void Update();
 	void Draw();
 
-	// ダメージを受け取る関数
-	void TakeDamage();
-
 	// ==== Getter / Setter ====
 	float GetGravity() const;
 
@@ -32,29 +29,35 @@ public:
 	float GetHalfSizeY() const { return halfSize_.y; }
 
 	bool IsInversion() const { return inversion; }
-	bool IsInvincible() const { return isInvincible_; } // 無敵状態かを取得
 
 	void SetOnGround(bool flag);
+
+	void SetDamage(bool flag) { isDamage_ = flag; }
+
+	// ダメージ処理を開始する関数
+	void OnDamage();
+	// 無敵状態かどうかを返す関数
+	bool IsInvincible() const;
 
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
 
 	// 横移動速度
-	const float speed = 0.6f;
+	const float speed = 0.42f;
 
 	// 落下速度の上限
 	const float maxFallSpeed = 1.0f;
 
 	// 重力
-	float gravity = -0.07f;
+	float gravity = -0.07f; // これいじっても変わらないよん
 
 	// ジャンプ初速度
-	const float jumpPower = 1.3f;
+	const float jumpPower = 0.76f; // 0.73でもいいかも 75
 
-	// 足場のX座標制限
-	const float minPlatformX = -20.0f;
-	const float maxPlatformX = 20.0f;
+	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
+	const float minPlatformX = -17.0f; // 左端13でもいいかも 14  20
+	const float maxPlatformX = 17.0f;  // 右端1313131313   14  20
 
 	bool isOnGround_ = false;
 
@@ -62,20 +65,29 @@ private:
 	float velocityY_ = 0.0f;
 	float velocityX_ = 0.0f;
 
-	float targetGravity = -0.06f;
+	float targetGravity = -0.04f; // 目標重力
 	float gravityLerpSpeed = 0.07f;
+
+	// 重力切り替え後の一時的な低重力システム
+	bool isGravityTransitioning_ = false; // 重力切り替え中フラグ
+	float transitionGravity_ = -0.02f;    // 切り替え後の低重力
+	float normalGravity_ = -0.07f;        // 通常重力
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;
-	int maxJumpCount_ = 1;
+	int maxJumpCount_ = 1; // ← ここを2にすれば二段ジャンプ
 
 	bool isJumping_ = false;
 	bool inversion = false;
 
-	// ダメージ関連
-	bool isInvincible_ = false;         // 無敵中か
-	float invincibleTimer_ = 0.0f;      // 無敵時間タイマー
-	const float kInvincibleTime = 2.0f; // 無敵時間（秒）
+	// ダメージ表示用
+	bool isDamage_ = false;
+	bool IsDamage() const { return isDamage_; }
+
+	// 無敵状態かどうかを示すフラグ
+	bool isInvincible_ = false;
+	// 無敵時間タイマー
+	float invincibilityTimer_ = 0.0f;
 
 	Model* model_ = nullptr;
 	Input* input_ = nullptr;

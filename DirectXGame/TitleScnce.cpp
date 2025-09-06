@@ -10,16 +10,6 @@ TitleScnce::~TitleScnce() {
 	delete sprite2_;
 	delete sprite3_;
 	delete sprite4_;
-
-	// 動的確保したオブジェクトの解放
-	delete player_;
-	for (auto platform : platforms_) {
-		delete platform;
-	}
-	// HPのワールドトランスフォームも解放する
-	for (auto wt : hpWorldTransforms_) {
-		delete wt;
-	}
 }
 
 // イージング関数の実装
@@ -50,126 +40,27 @@ void TitleScnce::Initialize() {
 
 	textureHandle2_ = KamataEngine::TextureManager::Load("Title/ShotGame.png");
 	sprite2_ = KamataEngine::Sprite::Create(textureHandle2_, {0, 0});
-	// 念のため反転状態をリセット
 	sprite2_->SetIsFlipX(false);
-
-	// ★修正: スプライトの原点を中央に設定（反転時に位置がずれないように）
 	sprite2_->SetAnchorPoint({0.5f, 0.5f});
-
-	// スプライト2の初期位置を画面中央付近に設定
-	sprite2_->SetPosition({640, 400}); // 画面中央付近の座標（1280x720想定）
+	sprite2_->SetPosition({640, 400});
 
 	textureHandle3_ = KamataEngine::TextureManager::Load("Title/HitEnter.png");
 	sprite3_ = KamataEngine::Sprite::Create(textureHandle3_, {0, 0});
 
-	// // パーティクル用モデルの読み込み
-	// particleModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
-
 	Timer_ = 0.0f;
 	isFinished_ = false;
-	isMovingDown = false; // 最初は上へ移動
-	isFlipped = false;    // 最初は反転しない
+	isMovingDown = false;
+	isFlipped = false;
 
-	// タイトルを中央に寄せるために調整
 	titleWorldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
 	titleWorldTransformFont_.translation_ = {0.0f, 0.0f, 0.0f};
 
-	// スプライトの初期化
 	InitializeSprites();
-
-	// 再初期化時のクリーンアップ
-	if (player_ != nullptr) {
-		delete player_;
-		player_ = nullptr;
-	}
-	for (auto platform : platforms_) {
-		delete platform;
-	}
-	platforms_.clear();
-	for (auto wt : hpWorldTransforms_) {
-		delete wt;
-	}
-	hpWorldTransforms_.clear();
-	isGameOver_ = false;
-	isGameClear_ = false;
-	platformSpawnTimer = 0.0f;
-	platformSideFlag = false;
-	lastPlatformX = 0.0f;
-	playerHP_ = 3;
-	// 乱数エンジンの初期化
-	std::random_device rd;
-	randomEngine_ = std::mt19937(rd());
-
-	// モデルの読み込み
-	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
-	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("Platform", true);
-	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
-	hpModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
-
-	// HPワールドトランスフォームを3個作成
-	for (int i = 0; i < playerHP_; i++) {
-		// WorldTransformをnewで動的確保し、ポインタを受け取る
-		WorldTransform* wt = new WorldTransform();
-		wt->Initialize();
-
-		// メンバへのアクセスはアロー演算子(->)を使う
-		wt->translation_ = {-18.0f + i * 2.0f, 18.0f, 0.0f};
-		wt->scale_ = {0.5f, 0.5f, 0.5f};
-
-		wt->UpdateMatarix();
-		// ポインタをベクターに追加
-		hpWorldTransforms_.push_back(wt);
-	}
-
-	// 左端（-20, 0, 0）に配置
-	endTransformLeft_.Initialize();
-	endTransformLeft_.translation_ = Vector3(-22.3f, 0.0f, 0.0f);
-
-	// 右端（20, 0, 0）に配置
-	endTransformRight_.Initialize();
-	endTransformRight_.translation_ = Vector3(22.3f, 0.0f, 0.0f);
-
-	endTransformLeft_.UpdateMatarix();
-	endTransformRight_.UpdateMatarix();
-
-	// カメラ初期化
-	camera_.Initialize();
 
 	// 天球の初期化
 	modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
 	skydome_ = new Skydome();
 	skydome_->Initialize(modelSkydome_, &camera_);
-
-	// プレイヤー初期化
-	Vector3 playerPos = {0, 0, 0};
-	player_ = new Player();
-	player_->Initialize(modelPlayer_, &camera_, playerPos);
-
-	// 足場をランダムに初期生成
-	std::uniform_real_distribution<float> posX(-20.0f, 20.0f);
-	std::uniform_real_distribution<float> posY(-10.0f, 40.0f);
-
-	const int platformCount = 10; // 足場の数
-	for (int i = 0; i < platformCount; i++) {
-		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
-
-		// 50% の確率で縦2倍サイズに変更
-		std::uniform_int_distribution<int> dist01(0, 1);
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f}; // 横はそのまま、縦だけ2倍
-			isDamage = true;            // ダメージ足場フラグON
-		}
-
-		Platform* platform = new Platform();
-		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
-		platforms_.push_back(platform);
-	}
-
-	// ワールドトランスフォームの初期化
-	worldTransform.Initialize();
 }
 
 void TitleScnce::InitializeSprites() {
@@ -180,105 +71,36 @@ void TitleScnce::InitializeSprites() {
 }
 
 void TitleScnce::Update() {
-	// 天球の更新
-	skydome_->Update();
+
+	if (skydome_) {
+		skydome_->Update();
+	}
 
 	Timer_ += 1.0f;
 
-	// Enterキーでタイトル終了
 	if (input_->TriggerKey(DIK_RETURN)) {
 		isFinished_ = true;
-		// タイトル終了時にアニメーション状態をリセット
-		isFlipping = false;
-		flipProgress = 0.0f;
-		currentScale = 1.0f;
-		isFlipped = false;
-		if (sprite2_) {
-			sprite2_->SetIsFlipX(false);
-			// サイズも元に戻す
-			sprite2_->SetSize({1280.0f, 720.0f});
-		}
 	}
 
-	// sprites[1] のアニメーション - イージング付き（タイトル中のみ）
-	if (!isFinished_ && sprite2_) {
-		// アニメーションタイマーを更新
-		animationTimer += 0.016f; // 60FPSを想定した時間増分
-
-		// 現在のスプライトの位置を取得
-		KamataEngine::Vector2 pos = sprite2_->GetPosition();
-
-		// 移動速度
-		float slowMoveSpeed = 2.0f;
-
-		// 反転アニメーション処理
-		if (isFlipping) {
-			flipProgress += 0.016f / flipDuration; // 進行度を更新
-
-			if (flipProgress >= 1.0f) {
-				// 反転アニメーション完了
-				flipProgress = 1.0f;
-				isFlipping = false;
-				currentScale = 1.0f;
-				// 実際の反転状態を切り替え
-				isFlipped = !isFlipped;
-				sprite2_->SetIsFlipX(isFlipped);
-			} else {
-				// イージングを適用してスケールを計算
-				if (flipProgress < 0.5f) {
-					// 前半：1.0f → 0.0f (縮小)
-					float t = flipProgress * 2.0f; // 0.0f ～ 1.0f にマッピング
-					currentScale = 1.0f - EaseInOutQuad(t);
-				} else {
-					// 後半：0.0f → 1.0f (拡大)
-					float t = (flipProgress - 0.5f) * 2.0f; // 0.0f ～ 1.0f にマッピング
-					currentScale = EaseOutBounce(t);
-					// この時点でスプライトの反転状態を更新（1回だけ）
-					static bool flippedThisCycle = false;
-					if (!flippedThisCycle) {
-						sprite2_->SetIsFlipX(!isFlipped);
-						flippedThisCycle = true;
-					}
-					// サイクル終了時にフラグをリセット
-					if (flipProgress >= 0.9f) {
-						flippedThisCycle = false;
-					}
-				}
-			}
-		} else {
-			currentScale = 1.0f;
-		}
-
-		// 移動方向の切り替えと反転開始判定
-		if (isMovingDown) {
-			pos.y += slowMoveSpeed;
-			if (pos.y >= SCREEN_BOTTOM_Y && !isFlipping) {
-				isMovingDown = false;
-				// 反転アニメーション開始
-				isFlipping = true;
-				flipProgress = 0.0f;
-			}
-		} else {
-			pos.y -= slowMoveSpeed;
-			if (pos.y <= FLIP_THRESHOLD && !isFlipping) {
-				isMovingDown = true;
-				// 反転アニメーション開始
-				isFlipping = true;
-				flipProgress = 0.0f;
-			}
-		}
-
-		// スプライトの位置を更新
-		sprite2_->SetPosition(pos);
-
-		// スケールを適用（イージング効果）
-		// 元のサイズを保持しつつ、X軸のみスケール変更
-		KamataEngine::Vector2 originalSize = {1280.0f, 720.0f};
-		sprite2_->SetSize({originalSize.x * currentScale, originalSize.y});
-	}
-
-	// 足場の生成タイミング管理（交互生成に一本化）
+		// 足場の生成タイミング管理
 	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
+	if (platformSpawnTimer >= platformSpawnInterval) {
+		platformSpawnTimer = 0.0f;
+
+		std::uniform_real_distribution<float> posX(-15.0f, 15.0f);
+
+		Vector3 pos;
+		if (player_->IsInversion()) {
+			pos = {posX(randomEngine_), 21.0f, 0.0f};
+		} else {
+			pos = {posX(randomEngine_), -20.0f, 0.0f};
+		}
+
+		Vector3 scale = {1.5f, 1.2f, 1.0f};
+		Platform* platform = new Platform();
+		platform->Initialize(pos, scale, modelPlatform_, &camera_);
+		platforms_.push_back(platform);
+	}
 
 	// プレイヤーの重力に応じたスクロール
 	float gravity = player_->GetGravity();
@@ -309,7 +131,6 @@ void TitleScnce::Update() {
 		++it;
 	}
 
-	// 交互生成ロジック
 	if (platformSpawnTimer >= platformSpawnInterval) {
 		platformSpawnTimer = 0.0f;
 
@@ -325,39 +146,23 @@ void TitleScnce::Update() {
 		}
 		platformSideFlag = !platformSideFlag; // 毎回交互に切り替え
 
-		std::uniform_int_distribution<int> dist01(0, 1);
-
 		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -20.0f, 0.0f};
 		Vector3 scale = {1.5f, 1.2f, 1.0f};
-		bool isDamage = false;
-
-		// 50% の確率で縦サイズ2倍
-		if (dist01(randomEngine_) == 1) {
-			scale = {1.5f, 2.4f, 1.0f};
-			isDamage = true;
-		}
-
 		Platform* platform = new Platform();
 		platform->Initialize(pos, scale, modelPlatform_, &camera_);
-		platform->SetDamage(isDamage);
 		platforms_.push_back(platform);
 
 		lastPlatformX = x; // 必要なら記憶
 	}
 
+	// =====================
+	// プレイヤー更新
+	// =====================
 	player_->Update();
 
-	// HP減少の衝突判定後、HPが0以下になったらゲームオーバーフラグを立てる
-	if (playerHP_ <= 0) {
-		isGameOver_ = true;
-	}
-
-	// プレイヤーが上端へ到達したらクリア（到達可能な閾値に修正）
-	if (player_->IsInversion() && player_->GetPosition().y >= 18.0f) {
-		isGameClear_ = true;
-	}
-
-	// 衝突判定
+	// =====================
+	// 衝突判定（横 + 縦 全部ここで処理）
+	// =====================
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
@@ -371,9 +176,8 @@ void TitleScnce::Update() {
 		Vector3 platPos = platform->GetWorldPosition();
 
 		Vector3 overlap; // 重なり量
-		                 // 修正: min/maxマクロとの競合を避けるため、( ) で囲む
-		overlap.x = (std::min)(playerAABB.GetMax().x, platformAABB.GetMax().x) - (std::max)(playerAABB.GetMin().x, platformAABB.GetMin().x);
-		overlap.y = (std::min)(playerAABB.GetMax().y, platformAABB.GetMax().y) - (std::max)(playerAABB.GetMin().y, platformAABB.GetMin().y);
+		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
+		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
 
 		// 衝突解決（重なりが小さい方に押し戻す）
 		if (overlap.x < overlap.y) {
@@ -403,18 +207,6 @@ void TitleScnce::Update() {
 
 		// 修正した座標を反映
 		player_->SetPosition(playerPos);
-
-		if (platform->IsDamage()) {
-			if (playerHP_ > 0) {
-				playerHP_--;
-
-				if (playerHP_ < (int)hpWorldTransforms_.size()) {
-					// アロー演算子(->)でメンバにアクセス
-					hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0}; // 消す代わりに縮小
-					hpWorldTransforms_[playerHP_]->UpdateMatarix();
-				}
-			}
-		}
 	}
 }
 
@@ -422,65 +214,29 @@ void TitleScnce::Draw() {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
-	// 2D描画前準備
 	Sprite::PreDraw(dxCommon->GetCommandList());
-	// 2D描画（必要ならここに描画処理を書く）
 	Sprite::PostDraw();
 
-	// 深度バッファクリア
 	dxCommon->ClearDepthBuffer();
 
-	// 3D描画前準備
 	Model::PreDraw(dxCommon->GetCommandList());
 
-	// 天球の描画
-	skydome_->Draw();
-
-	// 足場を描画
-	for (auto platform : platforms_) {
-		platform->Draw();
-	}
-	// プレイヤーを描画
-	player_->Draw();
-
-	if (modelEnd_) {
-		modelEnd_->Draw(endTransformLeft_, camera_);
-		modelEnd_->Draw(endTransformRight_, camera_);
+	if (skydome_) {
+		skydome_->Draw();
 	}
 
-	// HP描画
-	for (int i = 0; i < playerHP_; i++) {
-		if (i < (int)hpWorldTransforms_.size()) {
-			// ポインタを間接参照(*)してオブジェクトを渡す
-			hpModel_->Draw(*hpWorldTransforms_[i], camera_);
-		}
-	}
-
-	// 3D描画終了処理
 	Model::PostDraw();
 
-	// 3Dオブジェクト描画
-	KamataEngine::Model::PreDraw(commandList);
-
-	// // 全てのパーティクルを描画
-	// for (auto& particle : particles_) {
-	// 	particle->Draw(&Camera_);
-	// }
-
-	KamataEngine::Model::PostDraw();
-
-	// スプライト描画
-	KamataEngine::Sprite::PreDraw(commandList);
+	Sprite::PreDraw(commandList);
 
 	if (sprite2_) {
 		sprite2_->Draw();
 	}
 
-	// 「Hit Enter」点滅
 	if (sprite3_ && static_cast<int>(Timer_) % 60 < 30) {
 		sprite3_->SetPosition({0, 0});
 		sprite3_->Draw();
 	}
 
-	KamataEngine::Sprite::PostDraw();
+	Sprite::PostDraw();
 }
