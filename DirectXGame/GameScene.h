@@ -19,6 +19,12 @@ public:
 	// 描画処理
 	void Draw();
 
+		// ゲームオーバーになったかを取得
+	bool IsGameOver() const { return isGameOver_; }
+
+	// ゲームをクリアしたかを取得
+	bool IsGameClear() const { return isGameClear_; }
+
 private:
 	// プレイヤーのX軸移動範囲を可視化するモデル
 	KamataEngine::Model* modelEnd_ = nullptr;
@@ -91,4 +97,10 @@ private:
 
 	// 乱数生成エンジン（メルセンヌ・ツイスタ）
 	std::mt19937 randomEngine_;
+
+	// ゲームオーバーフラグ
+	bool isGameOver_ = false;
+
+	// ゲームクリアフラグ
+	bool isGameClear_ = false;
 };

@@ -1,4 +1,5 @@
 #include "Player.h"
+#include <algorithm> // std::minとstd::maxのために追加
 #include <cassert>
 
 Player::~Player() {}
@@ -8,9 +9,7 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 	model_ = model;
 	camera_ = camera;
 	worldTransform_.translation_ = pos;
-	// modelDamage_ の読み込みを削除
 	input_ = KamataEngine::Input::GetInstance();
-	// damageTransform_.Initialize(); を削除
 	worldTransform_.Initialize();
 
 	// 初期AABB
@@ -41,12 +40,8 @@ void Player::Update() {
 	worldTransform_.translation_.x += velocityX_;
 
 	// X座標の上限・下限を適用
-	if (worldTransform_.translation_.x < minPlatformX) {
-		worldTransform_.translation_.x = minPlatformX;
-	}
-	if (worldTransform_.translation_.x > maxPlatformX) {
-		worldTransform_.translation_.x = maxPlatformX;
-	}
+	// 修正: min/maxマクロとの競合を避けるため、( ) で囲む
+	worldTransform_.translation_.x = (std::max)(minPlatformX, (std::min)(maxPlatformX, worldTransform_.translation_.x));
 
 	// ジャンプ
 	if (input_->TriggerKey(DIK_SPACE)) {
@@ -64,6 +59,7 @@ void Player::Update() {
 	velocityY_ += gravity;
 
 	// 落下速度の上限を適用
+	// 修正: min/maxマクロとの競合を避けるため、( ) で囲む
 	if (!inversion) {
 		if (velocityY_ > maxFallSpeed) {
 			velocityY_ = maxFallSpeed;
@@ -84,7 +80,8 @@ void Player::Update() {
 			SetOnGround(true);
 			gravity = 0.0f;
 			inversion = true;
-			targetGravity = 0.05f; // 目標重力を上向きに
+			// gravity = -gravity; ← ここは削除
+			targetGravity = 0.07f; // 目標重力を上向きに
 			platformScrollSpeed = -fabs(platformScrollSpeed);
 		}
 	} else {
@@ -94,7 +91,8 @@ void Player::Update() {
 			SetOnGround(true);
 			gravity = 0.0f;
 			inversion = false;
-			targetGravity = -0.05f; // 目標重力を下向きに
+			// gravity = -gravity; ← ここは削除
+			targetGravity = -0.07f; // 目標重力を下向きに
 			platformScrollSpeed = fabs(platformScrollSpeed);
 		}
 	}
@@ -105,7 +103,6 @@ void Player::Update() {
 
 	worldTransform_.UpdateMatarix();
 }
-
 
 void Player::SetOnGround(bool flag) {
 	if (flag) {
@@ -139,23 +136,7 @@ void Player::SetPosition(const Vector3& pos) {
 
 float Player::GetGravity() const { return gravity; }
 
-// ダメージ処理。GameSceneから呼ばれる
-void Player::OnDamage() {
-	// すでに無敵なら何もしない
-	if (isInvincible_) {
-		return;
-	}
-
-	// 無敵状態にしてタイマーをセット
-	isInvincible_ = true;
-	invincibilityTimer_ = 1.5f; // 1.5秒間の無敵時間
-}
-
-// 外部から無敵状態か問い合わせるための関数
-bool Player::IsInvincible() const { return isInvincible_; }
-
-// SetDamageをSetDamageDirectionに変更
-void Platform::SetDamageDirection(DamageDirection direction) { damageDirection_ = direction; }
-
-// IsDamageをGetDamageDirectionに変更
-DamageDirection Platform::GetDamageDirection() const { return damageDirection_; }
+//void Player::TakeDamage(const Vector3& playerPos) {
+//	// 中身をすべて削除、またはコメントアウトする
+//	// (playerPosは未使用になるので警告が出るかもしれませんが問題ありません)
+//}
