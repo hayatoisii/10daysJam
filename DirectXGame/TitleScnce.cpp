@@ -51,8 +51,9 @@ void TitleScnce::Initialize() {
 	textureHandle3_ = KamataEngine::TextureManager::Load("Title/HitEnter.png");
 	sprite3_ = KamataEngine::Sprite::Create(textureHandle3_, {0, 0});
 
-	// パーティクル用モデルの読み込み
-	particleModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+
+	// // パーティクル用モデルの読み込み
+	//particleModel_ = KamataEngine::Model::CreateFromOBJ("cube", true);
 
 	titleskydome.Initialize();
 	Camera_.Initialize();
@@ -71,15 +72,12 @@ void TitleScnce::Initialize() {
 	InitializeSprites();
 }
 
-
 void TitleScnce::InitializeSprites() {
 	sprites.push_back(sprite_);
 	sprites.push_back(sprite2_);
 	sprites.push_back(sprite3_);
 	sprites.push_back(sprite4_);
 }
-
-// TitleScnce.cpp の修正版Update()関数
 
 void TitleScnce::Update() {
 	Timer_ += 1.0f;
@@ -175,38 +173,30 @@ void TitleScnce::Update() {
 		KamataEngine::Vector2 originalSize = {1280.0f, 720.0f};
 		sprite2_->SetSize({originalSize.x * currentScale, originalSize.y});
 
-		// マウスクリックでパーティクルを生成
-		if (input_->IsTriggerMouse(0)) {
-			// マウスカーソル座標を取得
-			KamataEngine::Vector2 mousePos = input_->GetMousePosition();
-
-			// 2D座標を3D空間の適切な位置に変換する必要があるため、
-			// ここでは簡単な例として、画面中央付近にパーティクルを生成します。
-			// 正確な座標が必要な場合は、プロジェクション行列などを使った座標変換が必要です。
-			Vector3 spawnPosition = {0.0f, 0.0f, 0.0f};
-
-			// ランダムな速度ベクトル
-			float randomX = static_cast<float>(rand() % 100 - 50) / 1000.0f;
-			float randomY = static_cast<float>(rand() % 100 - 50) / 1000.0f;
-			Vector3 velocity = {randomX, randomY, 0.0f};
-
-			// 新しいパーティクルを生成してリストに追加
-			Particle* newParticle = new Particle();
-			newParticle->Initialize(particleModel_, spawnPosition, velocity);
-			particles_.push_back(newParticle);
-		}
-
-		// 全てのパーティクルを更新
-		// 終了したパーティクルは削除
-		for (auto it = particles_.begin(); it != particles_.end();) {
-			(*it)->Update();
-			if ((*it)->IsFinished()) {
-				delete *it;
-				it = particles_.erase(it);
-			} else {
-				++it;
-			}
-		}
+		// // マウスクリックでパーティクルを生成
+		// if (input_->IsTriggerMouse(0)) {
+		// 	KamataEngine::Vector2 mousePos = input_->GetMousePosition();
+		// 	Vector3 spawnPosition = {0.0f, 0.0f, 0.0f};
+		//
+		// 	float randomX = static_cast<float>(rand() % 100 - 50) / 1000.0f;
+		// 	float randomY = static_cast<float>(rand() % 100 - 50) / 1000.0f;
+		// 	Vector3 velocity = {randomX, randomY, 0.0f};
+		//
+		// 	Particle* newParticle = new Particle();
+		// 	newParticle->Initialize(particleModel_, spawnPosition, velocity);
+		// 	particles_.push_back(newParticle);
+		// }
+		//
+		// // 全てのパーティクルを更新・削除
+		// for (auto it = particles_.begin(); it != particles_.end();) {
+		// 	(*it)->Update();
+		// 	if ((*it)->IsFinished()) {
+		// 		delete *it;
+		// 		it = particles_.erase(it);
+		// 	} else {
+		// 		++it;
+		// 	}
+		// }
 	}
 }
 
@@ -215,20 +205,16 @@ void TitleScnce::Draw() {
 
 	// 3Dオブジェクト描画
 	KamataEngine::Model::PreDraw(commandList);
-	
-	// 全てのパーティクルを描画
-	for (auto& particle : particles_) {
-		particle->Draw(&Camera_);
-	}
-	
+
+	// // 全てのパーティクルを描画
+	// for (auto& particle : particles_) {
+	// 	particle->Draw(&Camera_);
+	// }
+
 	KamataEngine::Model::PostDraw();
 
 	// スプライト描画
 	KamataEngine::Sprite::PreDraw(commandList);
-
-	// ★ここで背景スプライトを全画面に描画
-	// 例: 1280x720の青色背景
-	// KamataEngine::Sprite::DrawRect({0, 0}, {1280, 720}, {0.4f, 0.6f, 0.9f, 1.0f}); // RGBA
 
 	sprite_->Draw();
 
@@ -236,12 +222,11 @@ void TitleScnce::Draw() {
 		sprite2_->Draw();
 	}
 
-	// 「Hit Enter」点滅（30フレームごとにON/OFF）
+	// 「Hit Enter」点滅
 	if (sprite3_ && static_cast<int>(Timer_) % 60 < 30) {
 		sprite3_->SetPosition({0, 0});
 		sprite3_->Draw();
 	}
-
 
 	KamataEngine::Sprite::PostDraw();
 }

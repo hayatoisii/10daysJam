@@ -111,7 +111,6 @@
     <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MathUtility.cpp" />
-    <ClCompile Include="Particle.cpp" />
     <ClCompile Include="PauseMenu.cpp" />
     <ClCompile Include="Platform.cpp" />
     <ClCompile Include="Player.cpp" />
@@ -200,7 +199,6 @@
     <ClInclude Include="GameOverScene.h" />
     <ClInclude Include="GameScene.h" />
     <ClInclude Include="MathUtility.h" />
-    <ClInclude Include="Particle.h" />
     <ClInclude Include="PauseMenu.h" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="Player.h" />

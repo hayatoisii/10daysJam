@@ -1,4 +1,5 @@
 #include "GameScene.h"
+#include <algorithm> // std::minとstd::maxのために追加
 #include <random>
 
 GameScene::~GameScene() {
@@ -199,8 +200,9 @@ void GameScene::Update() {
 		Vector3 platPos = platform->GetWorldPosition();
 
 		Vector3 overlap; // 重なり量
-		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
-		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
+		                 // 修正: min/maxマクロとの競合を避けるため、( ) で囲む
+		overlap.x = (std::min)(playerAABB.GetMax().x, platformAABB.GetMax().x) - (std::max)(playerAABB.GetMin().x, platformAABB.GetMin().x);
+		overlap.y = (std::min)(playerAABB.GetMax().y, platformAABB.GetMax().y) - (std::max)(playerAABB.GetMin().y, platformAABB.GetMin().y);
 
 		// 衝突解決（重なりが小さい方に押し戻す）
 		if (overlap.x < overlap.y) {
@@ -226,11 +228,6 @@ void GameScene::Update() {
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
 			}
-		}
-
-		if (platform->IsDamage()) {
-			// プレイヤーにダメージ処理を通知
-		//	player_->TakeDamage(player_->GetPosition());
 		}
 
 		// 修正した座標を反映

@@ -14,6 +14,9 @@ public:
 	void Update();
 	void Draw();
 
+	// ダメージを受け取る関数
+	void TakeDamage();
+
 	// ==== Getter / Setter ====
 	float GetGravity() const;
 
@@ -29,12 +32,9 @@ public:
 	float GetHalfSizeY() const { return halfSize_.y; }
 
 	bool IsInversion() const { return inversion; }
+	bool IsInvincible() const { return isInvincible_; } // 無敵状態かを取得
 
 	void SetOnGround(bool flag);
-
-	void SetDamage(bool flag) { isDamage_ = flag; }
-
-	//void TakeDamage(const Vector3& playerPos);
 
 private:
 	// 足場のスクロール速度
@@ -52,9 +52,9 @@ private:
 	// ジャンプ初速度
 	const float jumpPower = 1.3f;
 
-	// 足場のX座標制限（必要に応じてGameSceneから渡す設計に変更可）
-	const float minPlatformX = -20.0f; // 左端
-	const float maxPlatformX = 20.0f; 
+	// 足場のX座標制限
+	const float minPlatformX = -20.0f;
+	const float maxPlatformX = 20.0f;
 
 	bool isOnGround_ = false;
 
@@ -62,19 +62,20 @@ private:
 	float velocityY_ = 0.0f;
 	float velocityX_ = 0.0f;
 
-	float targetGravity = -0.06f; // 目標重力
+	float targetGravity = -0.06f;
 	float gravityLerpSpeed = 0.07f;
 
 	// ジャンプ回数管理
 	int jumpCount_ = 0;
-	int maxJumpCount_ = 1; // ← ここを2にすれば二段ジャンプ
+	int maxJumpCount_ = 1;
 
 	bool isJumping_ = false;
 	bool inversion = false;
 
-	// ダメージ表示用
-	bool isDamage_ = false;
-	bool IsDamage() const { return isDamage_; }
+	// ダメージ関連
+	bool isInvincible_ = false;         // 無敵中か
+	float invincibleTimer_ = 0.0f;      // 無敵時間タイマー
+	const float kInvincibleTime = 2.0f; // 無敵時間（秒）
 
 	Model* model_ = nullptr;
 	Input* input_ = nullptr;

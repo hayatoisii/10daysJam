@@ -6,7 +6,6 @@
 #include <KamataEngine.h>
 #include <audio/Audio.h>
 #include <math/Vector2.h>
-#include "Particle.h"
 
 /// <summary>
 /// タイトルシーン
@@ -88,7 +87,7 @@ private:
 
 	// 画面中央付近での上下移動に調整（1280x720想定）
 	const float FLIP_THRESHOLD = 150.0f;  // 上端での反転位置
-	const float SCREEN_EDGE_Y = -400.0f;   // 画面上端付近
+	const float SCREEN_EDGE_Y = -400.0f;  // 画面上端付近
 	const float SCREEN_BOTTOM_Y = 400.0f; // 画面下端付近
 
 	// スプライト2用のワールドトランスフォーム
@@ -104,8 +103,8 @@ private:
 	float EaseInOutQuad(float t);
 	float EaseOutBounce(float t);
 
-	// パーティクル管理用コンテナ
-	std::vector<Particle*> particles_;
-	// パーティクル用モデル
-	Model* particleModel_ = nullptr;
+	// // パーティクル管理用コンテナ
+	// std::vector<Particle*> particles_;
+	// // パーティクル用モデル
+	// Model* particleModel_ = nullptr;
 };
