@@ -166,6 +166,7 @@ void GameScene::Update() {
 			isDamage = true;
 		}
 
+
 		Platform* platform = new Platform();
 		platform->Initialize(pos, scale, modelPlatform_, &camera_);
 		platform->SetDamage(isDamage);
