@@ -12,6 +12,9 @@ GameScene::~GameScene() {
 
 	delete skySprite1_;
 	delete skySprite2_;
+
+	// ▼▼▼ font_の解放処理を追加 ▼▼▼
+	delete font_;
 }
 
 void GameScene::Initialize() {
