@@ -133,6 +133,10 @@ void GameScene::Initialize() {
 		platforms_.push_back(platform);
 	}
 	worldTransform.Initialize();
+
+
+	font_ = new BIt_Map_Font();
+	font_->Initialize();
 }
 
 void GameScene::Update() {
@@ -295,6 +299,24 @@ void GameScene::Update() {
 		isGameOver_ = true;
 	}
 	// ▲▲▲ ここまで修正・追加 ▲▲▲
+	// プレイヤーの現在位置
+	Vector3 currentPlayerPos = player_->GetPosition();
+
+	//// 落下・ジャンプ中か判定
+	//bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+
+	//// Y座標が変化している場合のみスコア加算
+	//if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+	//	score_++;
+	//}
+
+	//prevPlayerPos_ = currentPlayerPos;
+	//prevOnGround_ = player_->IsOnGround();
+
+	//if (score_ != prevScore_) {
+	//	font_->Set(score_);
+	//	prevScore_ = score_;
+	//}
 }
 
 void GameScene::Draw() {

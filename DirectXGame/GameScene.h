@@ -2,6 +2,7 @@
 #include "KamataEngine.h"
 #include "Platform.h"
 #include "Player.h"
+#include "BIt_Map_Font.h"
 #include <random>
 
 class GameScene {
@@ -97,4 +98,7 @@ private:
 	int playerHP_ = 3;
 
 	const int platformCount = 1; // 足場の数
+
+	// スコア表示用フォント
+	BIt_Map_Font* font_ = nullptr;
 };
