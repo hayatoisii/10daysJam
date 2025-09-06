@@ -76,8 +76,6 @@ private:
 	KamataEngine::Model* modelBackground_ = nullptr;
 	WorldTransform transformBackground_;
 
-	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
-
 	// プラットフォーム生成タイマー（経過時間）
 	float platformSpawnTimer = 1.5f;
 
@@ -100,41 +98,7 @@ private:
 
 	const int platformCount = 1; // 足場の数
 
-    // HP用モデル
-    Model* hpModel_ = nullptr;
-
-	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
-	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
-
-	KamataEngine::Model* modelBackground_ = nullptr;
-	WorldTransform transformBackground_;
-
 	const float spawnRateModifier = 1.1f; // ★この値を大きくすると、生成が遅くなります 1.2
-	
-    // HP用ワールドトランスフォーム
-	std::vector<WorldTransform*> hpWorldTransforms_;
-
-	// プレイヤーオブジェクトへのポインタ
-	Player* player_ = nullptr;
-
-	// プレイヤーモデル
-	Model* modelPlayer_ = nullptr;
-
-	// プラットフォームモデル
-	Model* modelPlatform_ = nullptr;
-
-	// カメラ
-	Camera camera_;
-
-	// ワールド変換（汎用）
-	WorldTransform worldTransform;
-
-	// 動的に生成されるプラットフォームのコンテナ
-	std::vector<Platform*> platforms_;
-
-	// 乱数生成エンジン（メルセンヌ・ツイスタ）
-	std::mt19937 randomEngine_;
-	const int platformCount = 1; // 足場の数
 
 	// スコア表示用フォント
 	BIt_Map_Font* font_ = nullptr;

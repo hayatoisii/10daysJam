@@ -86,7 +86,7 @@ void GameScene::Initialize() {
 	for (int i = 0; i < playerHP_; i++) {
 		WorldTransform* wt = new WorldTransform();
 		wt->Initialize();
-		wt->translation_ = {-32.5f + i * 4.0f, 18.0f, 0.0f};
+		wt->translation_ = {-33.5f + i * 5.0f, 18.0f, 0.0f};
 		wt->scale_ = {1.5f, 1.5f, 0.5f};
 		wt->UpdateMatarix();
 		hpWorldTransforms_.push_back(wt);
@@ -185,9 +185,13 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
-	// 足場の生成タイミング管理
-	platformSpawnTimer += 1.0f / 60.0f; // 60FPS想定
-	if (platformSpawnTimer >= platformSpawnInterval) {
+	gameTime_ += 1.0f / 60.0f;
+	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 0.5f;
+	if (speedMultiplier_ > 100.0f) {
+		speedMultiplier_ = 100.0f;
+	}
+	platformSpawnTimer += 1.0f / 60.0f;
+	if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
 		platformSpawnTimer = 0.0f;
 
 		// X座標を左右交互の範囲で決める
@@ -221,7 +225,7 @@ void GameScene::Update() {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
 			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
-			platform->SetDamageColliderScaleY(1.3f);
+			platform->SetDamageColliderScaleY(1.4f);
 			// 安全側（ダメージじゃない方）を少し小さく
 			platform->SetSafeSideScaleY(1.0f);
 		} else {
@@ -307,16 +311,11 @@ void GameScene::Update() {
 		if (!playerAABB.IsColliding(platformAABB)) {
 			continue;
 		}
-
-		// プレイヤー中心とプラットフォーム中心の差
 		Vector3 playerPos = player_->GetPosition();
 		Vector3 platPos = platform->GetWorldPosition();
-
-		Vector3 overlap; // 重なり量
+		Vector3 overlap;
 		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
 		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
-
-		// 衝突解決（重なりが小さい方に押し戻す）
 		if (overlap.x < overlap.y) {
 			if (playerPos.x < platPos.x) {
 				playerPos.x -= overlap.x;
@@ -326,37 +325,69 @@ void GameScene::Update() {
 			player_->SetVelocityX(0.0f);
 		} else {
 			if (playerPos.y > platPos.y) {
-				// 上から着地
-				playerPos.y += overlap.y;
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
+				if (platform->GetDamageDirection() == DamageDirection::TOP) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
+				}
 			} else {
-				// 下からぶつかった
-				playerPos.y -= overlap.y;
+				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
+				float playerHalfHeight = playerSize.y * 0.5f;
+				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
-			}
-		}
-
-		if (platform->IsDamage()) {
-			// プレイヤーにダメージ処理を通知
-		//	player_->TakeDamage(player_->GetPosition());
-		}
-
-		// 修正した座標を反映
-		player_->SetPosition(playerPos);
-
-		if (platform->IsDamage()) {
-			if (playerHP_ > 0) {
-				playerHP_--;
-
-				if (playerHP_ < (int)hpWorldTransforms_.size()) {
-					// アロー演算子(->)でメンバにアクセス
-					hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0}; // 消す代わりに縮小
-					hpWorldTransforms_[playerHP_]->UpdateMatarix();
+				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+						}
+					}
 				}
 			}
 		}
+		player_->SetPosition(playerPos);
+	}
+
+	// ▼▼▼ ここから修正・追加 ▼▼▼
+	// HPが0以下になったらゲームオーバーフラグを立てる
+	if (playerHP_ <= 0) {
+		isGameOver_ = true;
+	}
+	// ▲▲▲ ここまで修正・追加 ▲▲▲
+	// プレイヤーの現在位置
+	Vector3 currentPlayerPos = player_->GetPosition();
+
+	// 落下・ジャンプ中か判定
+	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+
+	// Y座標が変化している場合のみスコア加算
+	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+		score_++;
+	}
+
+	prevPlayerPos_ = currentPlayerPos;
+	prevOnGround_ = player_->IsOnGround();
+
+	if (score_ != prevScore_) {
+		font_->Set(score_);
+		prevScore_ = score_;
 	}
 }
 
@@ -376,6 +407,18 @@ void GameScene::Draw() {
 	// 2D描画前準備
 	Sprite::PreDraw(dxCommon->GetCommandList());
 	// 2D描画（必要ならここに描画処理を書く）
+	if (skySprite1_) {
+		skySprite1_->Draw();
+	}
+	if (skySprite2_) {
+		skySprite2_->Draw();
+	}
+	if (spriteGravityLineTop_) {
+		spriteGravityLineTop_->Draw();
+	}
+	if (spriteGravityLineBottom_) {
+		spriteGravityLineBottom_->Draw();
+	}
 	Sprite::PostDraw();
 
 	dxCommon->ClearDepthBuffer();
