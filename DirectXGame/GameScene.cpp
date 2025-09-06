@@ -53,6 +53,36 @@ void GameScene::Initialize() {
 	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
 	transformBackground_.UpdateMatarix();
 
+	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
+	transformBackground_.Initialize();
+	// Z軸を奥にずらして配置（数値が大きいほど奥になります）
+	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
+	transformBackground_.UpdateMatarix();
+
+
+		// ▼▼▼ 「sky」背景スプライトの初期化を追加 ▼▼▼
+	skyTextureHandle_ = TextureManager::Load("sky.png");
+	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
+	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
+
+	float windowWidth = 640;
+	float windowHeight = 720;
+
+	// 画像サイズを画面に合わせる
+	skySprite1_->SetSize({windowWidth, windowHeight});
+	skySprite2_->SetSize({windowWidth, windowHeight});
+
+	// アンカーポイント（基準点）を画像の中心に設定
+	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
+	skySprite2_->SetAnchorPoint({0.5f, 0.5f});
+
+	// 1枚目を画面ぴったりに配置
+	skySprite1_->SetPosition({windowWidth , windowHeight});
+	// 2枚目を1枚目のすぐ上に、画面外に配置
+	skySprite2_->SetPosition({windowWidth, windowHeight - windowHeight});
+	// ▲▲▲ ---------------------------------- ▲▲▲
+
+	// HPワールドトランスフォームを3個作成
 	skyTextureHandle_ = TextureManager::Load("sky.png");
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
@@ -76,6 +106,10 @@ void GameScene::Initialize() {
 		hpWorldTransforms_.push_back(wt);
 	}
 
+	// プレイヤーのX軸移動範囲を可視化するモデル
+	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
+
+	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f);
 	endTransformRight_.Initialize();
@@ -356,6 +390,7 @@ void GameScene::Draw() {
 		platform->Draw();
 	}
 	player_->Draw();
+
 	if (modelEnd_) {
 		modelEnd_->Draw(endTransformLeft_, camera_);
 		modelEnd_->Draw(endTransformRight_, camera_);

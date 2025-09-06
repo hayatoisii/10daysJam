@@ -4,6 +4,7 @@
 #include "Player.h"
 #include "BIt_Map_Font.h"
 #include <random>
+#include <vector>
 
 class GameScene {
 public:
