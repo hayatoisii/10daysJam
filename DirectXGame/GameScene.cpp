@@ -99,6 +99,7 @@ void GameScene::Initialize() {
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f); // 15でもいいかも 16  20
 
+
 	// 右端（20, 0, 0）に配置
 	endTransformRight_.Initialize();
 	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f); // 15  16  20
