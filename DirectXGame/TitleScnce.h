@@ -6,6 +6,7 @@
 #include <KamataEngine.h>
 #include <audio/Audio.h>
 #include <math/Vector2.h>
+#include "Particle.h"
 
 /// <summary>
 /// タイトルシーン
@@ -102,4 +103,9 @@ private:
 	// イージング関数
 	float EaseInOutQuad(float t);
 	float EaseOutBounce(float t);
+
+	// パーティクル管理用コンテナ
+	std::vector<Particle*> particles_;
+	// パーティクル用モデル
+	Model* particleModel_ = nullptr;
 };

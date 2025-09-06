@@ -12,7 +12,7 @@ using namespace KamataEngine;
 // main.cppの修正
 enum class Scene { Title, Select, Game, GameOver, Pause, GameClear };
 
-Scene scene = Scene::Select;
+Scene scene = Scene::Title;
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
@@ -102,14 +102,25 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			}
 			break;
 
+			// GameClearシーンからタイトルに戻る際
+		case Scene::GameClear:
+			gameClearScene->Update();
+			gameClearScene->Draw();
+			if (gameClearScene->IsReturnToTitle()) {
+				scene = Scene::Title;
+				titleScnce->Initialize();
+				selectScene->Initialize(); // ★★★この行を追加★★★
+			}
+			break;
+
+		// GameOverシーンからタイトルに戻る際
 		case Scene::GameOver:
 			gameOverScene->Update();
 			gameOverScene->Draw();
-			// ゲームオーバーシーンが終了したらタイトルシーンへ戻る
 			if (gameOverScene->IsReturnToTitle()) {
 				scene = Scene::Title;
-				// タイトルシーンも再初期化
 				titleScnce->Initialize();
+				selectScene->Initialize(); // ★★★この行を追加★★★
 			}
 			break;
 
@@ -124,20 +135,6 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			else if (pauseMenu->IsQuit()) {
 				scene = Scene::Title;
 				titleScnce->Initialize();
-			}
-			break;
-
-		case Scene::GameClear:
-			gameClearScene->Update();
-			gameClearScene->Draw();
-			// ゲームクリアシーンが終了したらタイトルシーンへ戻る
-			if (gameClearScene->IsReturnToTitle()) {
-				scene = Scene::Title;
-				titleScnce->Initialize();
-			}
-			// 遷移時の初期化（次回すぐ飛ばないように）
-			else if (gameScnce->IsGameClear()) {
-				gameClearScene->Initialize();
 			}
 			break;
 		}

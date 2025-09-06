@@ -72,11 +72,14 @@ void SelectScene::Update() {
 		StartArrowMovement();
 	}
 
-	// Enterキーが押されたらゲーム開始
-	if (input_->TriggerKey(DIK_RETURN)) {
-		isGameStart_ = true;
-	}
+	if (currentSelectIndex_ == 0) {
 
+		// Enterキーが押されたらゲーム開始
+		if (input_->TriggerKey(DIK_RETURN)) {
+			isGameStart_ = true;
+		}
+
+	}
 	// 矢印のアニメーション更新
 	UpdateArrowAnimation();
 }
@@ -115,7 +118,7 @@ void SelectScene::StartArrowMovement() {
 // 矢印のアニメーション更新
 void SelectScene::UpdateArrowAnimation() {
 	// 上下の浮遊アニメーション
-	float floatSpeed = 0.05f;    // 浮遊速度を調整
+	float floatSpeed = 0.05f;     // 浮遊速度を調整
 	float floatAmplitude = 10.0f; // 浮遊の振幅を調整
 	animationTimer_ += floatSpeed;
 	arrowVerticalOffset_ = floatAmplitude * std::sin(animationTimer_);
