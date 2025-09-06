@@ -12,7 +12,7 @@ using namespace KamataEngine;
 // main.cppの修正
 enum class Scene { Title, Select, Game, GameOver, Pause, GameClear };
 
-Scene scene = Scene::Title;
+Scene scene = Scene::Select;
 
 // Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
