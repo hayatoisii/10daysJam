@@ -46,6 +46,9 @@ public:
 	// 無敵状態かどうかを返す関数
 	bool IsInvincible() const;
 
+	float GetMaxX() const { return maxPlatformX; }
+	float GetMinX() const { return minPlatformX; }
+
 	Vector3 GetPrevPosition() const { return prevPosition_; } // ▼▼▼ 追加 ▼▼▼
 	Vector3 GetHalfSize() const { return halfSize_; }         // ▼▼▼ 追加 ▼▼▼
 

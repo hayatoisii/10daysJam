@@ -64,7 +64,7 @@ void GameScene::Initialize() {
 	transformBackground_.UpdateMatarix();
 
 	// ▼▼▼ 「sky」背景スプライトの初期化を追加 ▼▼▼
-	skyTextureHandle_ = TextureManager::Load("sky.png"); //skyじゃなくて　背景の岩、に変更する後で
+	skyTextureHandle_ = TextureManager::Load("sky.png"); // skyじゃなくて　背景の岩、に変更する後で
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
@@ -266,7 +266,19 @@ void GameScene::Update() {
 	playerPos.y += velocityY;
 	player_->SetPosition(playerPos);
 
-// --- 6. 当たり判定 ---
+	// ★★★ ここからが追加ブロックです ★★★
+	// X軸の移動範囲制限を適用する
+	playerPos = player_->GetPosition(); // 最新の位置を取得
+	if (playerPos.x < player_->GetMinX()) {
+		playerPos.x = player_->GetMinX();
+	}
+	if (playerPos.x > player_->GetMaxX()) {
+		playerPos.x = player_->GetMaxX();
+	}
+	player_->SetPosition(playerPos);
+	// ★★★ 追加ブロックはここまで ★★★
+
+	// --- 6. 当たり判定 ---
 	player_->SetOnGround(false);
 
 	for (auto platform : platforms_) {
@@ -310,7 +322,7 @@ void GameScene::Update() {
 			// (着地時の処理...)
 			switch (platform->GetItemType()) {
 			case ItemType::SPEED_RESET:
-				gameTime_ -= 20.0f;
+				gameTime_ -= 12.0f;
 				if (gameTime_ < 0.0f) {
 					gameTime_ = 0.0f;
 				}
@@ -338,7 +350,7 @@ void GameScene::Update() {
 			// (着地時の処理...)
 			switch (platform->GetItemType()) {
 			case ItemType::SPEED_RESET:
-				gameTime_ -= 20.0f;
+				gameTime_ -= 12.0f;
 				if (gameTime_ < 0.0f) {
 					gameTime_ = 0.0f;
 				}
