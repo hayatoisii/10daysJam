@@ -186,93 +186,235 @@ void GameScene::Initialize() {
 }
 
 void GameScene::Update() {
+	// --- 1. 時間経過と全体スピードの更新 ---
 	gameTime_ += 1.0f / 60.0f;
-	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 1.5f;
+	speedMultiplier_ = 1.0f + (gameTime_ / 15.0f) * 1.5f;
 	if (speedMultiplier_ > 200.0f) {
 		speedMultiplier_ = 200.0f;
 	}
+
+	// --- 2. 足場の生成 ---
 	platformSpawnTimer += 1.0f / 60.0f;
 	if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
 		platformSpawnTimer = 0.0f;
-
-		// X座標を左右交互の範囲で決める
 		float x;
 		if (platformSideFlag) {
-			std::uniform_real_distribution<float> posX(-17.0f, 0.0f); // 13でもいいかも 14     20
+			std::uniform_real_distribution<float> posX(-17.0f, 0.0f);
 			x = posX(randomEngine_);
 		} else {
-			std::uniform_real_distribution<float> posX(0.0f, 17.0f); // 13ｄもいいかも 14     20
+			std::uniform_real_distribution<float> posX(0.0f, 17.0f);
 			x = posX(randomEngine_);
 		}
 		platformSideFlag = !platformSideFlag;
-
 		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
-		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
-
+		Vector3 scale = {1.3f, 1.0f, 1.0f};
 		Platform* platform = new Platform();
-
-		// 60%の確率でダメージ足場を生成
-		std::uniform_int_distribution<int> dist10(0, 9); // 0から9の乱数を生成
+		std::uniform_int_distribution<int> dist10(0, 9);
 		if (dist10(randomEngine_) < 6) {
-			scale = {1.3f, 1.5f, 1.0f}; // 1.0でもいいかも
-			// ★★★ 変更点：アイテムモデルの引数を追加 ★★★
+			scale = {1.3f, 1.5f, 1.0f};
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-
-			// プレイヤーの重力方向に応じて危険な面を設定
 			if (player_->IsInversion()) {
 				platform->SetDamageDirection(DamageDirection::BOTTOM);
 			} else {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
-			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
-			platform->SetDamageColliderScaleY(1.2f);//1.4
-			// 安全側（ダメージじゃない方）を少し小さく
+			platform->SetDamageColliderScaleY(1.2f);
 			platform->SetSafeSideScaleY(1.0f);
 		} else {
-			// ★★★ 変更点：アイテムモデルの引数を追加 ★★★
 			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			platform->SetDamageDirection(DamageDirection::NONE);
-
-			// ★★★ ここから追加：10%の確率でアイテム付き足場にする ★★★
-			// 通常の足場が生成される場合にのみ、アイテム化の抽選を行う
-			std::uniform_int_distribution<int> itemDist(0, 19); // 0から19の乱数を生成 (20種類)
-			if (itemDist(randomEngine_) == 0) {                 // 0が出た場合 (5%の確率)
+			std::uniform_int_distribution<int> itemDist(0, 19);
+			if (itemDist(randomEngine_) == 0) {
 				platform->SetItemType(ItemType::SPEED_RESET);
 			}
-			// ★★★ ここまで追加 ★★★
 		}
 		platforms_.push_back(platform);
 		lastPlatformX = x;
 	}
 
-	// プレイヤーの重力に応じたスクロール（速度倍率を適用）
+	// --- 3. 全ての足場をスクロールさせる ---
 	float gravity = player_->GetGravity();
 	float baseScrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
 	float scrollSpeed = baseScrollSpeed * speedMultiplier_;
-
 	for (auto platform : platforms_) {
 		platform->SetScrollSpeed(scrollSpeed);
 		platform->Update(player_->IsInversion());
 	}
 
+	// --- 4. プレイヤーの入力処理 ---
+	player_->Update();
+
+	// --- 5. プレイヤーの物理演算と移動 ---
+	player_->InterpolateGravity();
+	float velocityX = player_->GetVelocityX();
+	float velocityY = player_->GetVelocityY();
+	Vector3 playerPos = player_->GetPosition();
+	if (!player_->IsOnGround()) {
+		velocityY += player_->GetGravity();
+	}
+	if (!player_->IsInversion()) {
+		if (velocityY < -player_->GetMaxFallSpeed()) {
+			velocityY = -player_->GetMaxFallSpeed();
+		}
+	} else {
+		if (velocityY > player_->GetMaxFallSpeed()) {
+			velocityY = player_->GetMaxFallSpeed();
+		}
+	}
+	player_->SetVelocityY(velocityY);
+	playerPos.x += velocityX;
+	playerPos.y += velocityY;
+	player_->SetPosition(playerPos);
+
+// --- 6. 当たり判定 ---
+	player_->SetOnGround(false);
+
+	for (auto platform : platforms_) {
+		const AABB& platformAABB = platform->GetAABB();
+		const AABB& playerAABB = player_->GetAABB();
+
+		// このフレームの移動を包括するAABBを作成し、すり抜けを防ぐ
+		playerPos = player_->GetPosition();
+		Vector3 prevPlayerPos = player_->GetPrevPosition();
+		Vector3 playerHalfSize = player_->GetHalfSize();
+		AABB broadPhaseAABB;
+		Vector3 minPoint = {fminf(playerPos.x, prevPlayerPos.x) - playerHalfSize.x, fminf(playerPos.y, prevPlayerPos.y) - playerHalfSize.y, 0.0f};
+		Vector3 maxPoint = {fmaxf(playerPos.x, prevPlayerPos.x) + playerHalfSize.x, fmaxf(playerPos.y, prevPlayerPos.y) + playerHalfSize.y, 0.0f};
+		broadPhaseAABB.Set(minPoint, maxPoint);
+
+		if (!broadPhaseAABB.IsColliding(platformAABB)) {
+			continue;
+		}
+
+		// 前フレームのプレイヤーのAABBを計算
+		AABB prevPlayerAABB;
+		prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
+
+		// ★★★ ここからが重要な変更点です ★★★
+		// 浮動小数点数の誤差を許容するための「許容値(epsilon)」
+		float epsilon = 0.01f;
+
+		// 前フレームで、プレイヤーが足場の上下左右のどの位置にいたかを判定（許容値を追加）
+		bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
+		bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
+		bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
+		bool wasRight = prevPlayerAABB.GetMin().x >= platformAABB.GetMax().x - epsilon;
+
+		playerPos = player_->GetPosition();
+		bool collisionHandled = false;
+
+		// --- 優先度1: 上下からの着地を判定 ---
+		if (wasAbove && player_->GetVelocityY() <= 0.0f) {
+			playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+			player_->SetOnGround(true);
+			// (着地時の処理...)
+			switch (platform->GetItemType()) {
+			case ItemType::SPEED_RESET:
+				gameTime_ -= 20.0f;
+				if (gameTime_ < 0.0f) {
+					gameTime_ = 0.0f;
+				}
+				platform->SetItemType(ItemType::NONE);
+				break;
+			default:
+				break;
+			}
+			if (platform->GetDamageDirection() == DamageDirection::TOP) {
+				if (!player_->IsInvincible()) {
+					if (playerHP_ > 0) {
+						playerHP_--;
+						player_->OnDamage();
+						if (playerHP_ < (int)hpWorldTransforms_.size()) {
+							hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+							hpWorldTransforms_[playerHP_]->UpdateMatarix();
+						}
+					}
+				}
+			}
+			collisionHandled = true;
+		} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
+			playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+			player_->SetOnGround(true);
+			// (着地時の処理...)
+			switch (platform->GetItemType()) {
+			case ItemType::SPEED_RESET:
+				gameTime_ -= 20.0f;
+				if (gameTime_ < 0.0f) {
+					gameTime_ = 0.0f;
+				}
+				platform->SetItemType(ItemType::NONE);
+				break;
+			default:
+				break;
+			}
+			if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+				if (!player_->IsInvincible()) {
+					if (playerHP_ > 0) {
+						playerHP_--;
+						player_->OnDamage();
+						if (playerHP_ < (int)hpWorldTransforms_.size()) {
+							hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+							hpWorldTransforms_[playerHP_]->UpdateMatarix();
+						}
+					}
+				}
+			}
+			collisionHandled = true;
+		}
+
+		// --- 優先度2: 左右からの壁衝突を判定 ---
+		if (!collisionHandled && (wasLeft || wasRight)) {
+			if (playerPos.x < platform->GetWorldPosition().x) {
+				playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
+			} else {
+				playerPos.x = platformAABB.GetMax().x + playerHalfSize.x;
+			}
+			player_->SetVelocityX(0.0f);
+			collisionHandled = true;
+		}
+
+		// --- 優先度3: フォールバック（緊急脱出）処理 ---
+		if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
+			// 上にも下にも横にもいなかった＝既にめり込んでいた場合、強制的に押し出す
+			if (!player_->IsInversion()) {
+				playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+				player_->SetOnGround(true);
+			} else {
+				playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+				player_->SetOnGround(true);
+			}
+		}
+
+		player_->SetPosition(playerPos);
+	}
+
+	// --- 7. 画面端での重力反転処理 ---
+	playerPos = player_->GetPosition();
+	if (!player_->IsInversion()) {
+		if (playerPos.y <= -16.7f) {
+			playerPos.y = -16.7f;
+			player_->SetPosition(playerPos);
+			player_->TriggerGravityReversal();
+		}
+	} else {
+		if (playerPos.y >= 16.7f) {
+			playerPos.y = 16.7f;
+			player_->SetPosition(playerPos);
+			player_->TriggerGravityReversal();
+		}
+	}
+
+	// --- 8. 背景の更新 ---
 	if (skySprite1_ && skySprite2_) {
-		// スプライトはピクセル単位で動くため、速度を調整
 		const float spriteSpeedModifier = 17.0f;
 		float spriteScrollSpeed = -scrollSpeed * spriteSpeedModifier;
-
-		// 1枚目のスプライトを動かす
 		Vector2 skyPos1 = skySprite1_->GetPosition();
 		skyPos1.y += spriteScrollSpeed;
 		skySprite1_->SetPosition(skyPos1);
-
-		// 2枚目のスプライトを動かす
 		Vector2 skyPos2 = skySprite2_->GetPosition();
 		skyPos2.y += spriteScrollSpeed;
 		skySprite2_->SetPosition(skyPos2);
-
-		// --- ループ処理 ---
 		float windowHeight = (float)WinApp::kWindowHeight;
-		// スクロールが下向きの場合
 		if (spriteScrollSpeed > 0) {
 			if (skyPos1.y > windowHeight + windowHeight / 2.0f) {
 				skySprite1_->SetPosition({skyPos1.x, skyPos2.y - windowHeight});
@@ -280,9 +422,7 @@ void GameScene::Update() {
 			if (skyPos2.y > windowHeight + windowHeight / 2.0f) {
 				skySprite2_->SetPosition({skyPos2.x, skyPos1.y - windowHeight});
 			}
-		}
-		// スクロールが上向きの場合
-		else {
+		} else {
 			if (skyPos1.y < -windowHeight / 2.0f) {
 				skySprite1_->SetPosition({skyPos1.x, skyPos2.y + windowHeight});
 			}
@@ -292,163 +432,47 @@ void GameScene::Update() {
 		}
 	}
 
-	// 画面外の足場を削除
+	// --- 9. 画面外の足場を削除 ---
 	for (auto it = platforms_.begin(); it != platforms_.end();) {
 		Vector3 pos = (*it)->GetWorldPosition();
-		bool erased = false; // 削除されたかどうかのフラグ
-
+		bool erased = false;
 		if (player_->IsInversion()) {
-			// ▼▼▼ 条件を修正 ▼▼▼
-			// プレイヤーが上向き ⇒ 足場は下にスクロールするので、画面の下端で消す
 			if (pos.y < -22.0f) {
 				delete *it;
 				it = platforms_.erase(it);
 				erased = true;
 			}
 		} else {
-			// ▼▼▼ 条件を修正 ▼▼▼
-			// プレイヤーが下向き ⇒ 足場は上にスクロールするので、画面の上端で消す
 			if (pos.y > 22.0f) {
 				delete *it;
 				it = platforms_.erase(it);
 				erased = true;
 			}
 		}
-
-		// 削除されなかった場合のみ、イテレータを進める
 		if (!erased) {
 			++it;
 		}
 	}
 
-	player_->Update();
+	// --- 10. プレイヤーの行列を最終更新 ---
+	player_->UpdateWorldMatrix();
 
-	player_->SetOnGround(false);
-
-// --- 衝突判定 ---
-	for (auto platform : platforms_) {
-		const AABB& platformAABB = platform->GetAABB();
-		const AABB& playerAABB = player_->GetAABB();
-		if (!playerAABB.IsColliding(platformAABB)) {
-			continue;
-		}
-		Vector3 playerPos = player_->GetPosition();
-		Vector3 platPos = platform->GetWorldPosition();
-		Vector3 overlap;
-		overlap.x = std::fmin(playerAABB.GetMax().x, platformAABB.GetMax().x) - std::fmax(playerAABB.GetMin().x, platformAABB.GetMin().x);
-		overlap.y = std::fmin(playerAABB.GetMax().y, platformAABB.GetMax().y) - std::fmax(playerAABB.GetMin().y, platformAABB.GetMin().y);
-		if (overlap.x < overlap.y) {
-			if (playerPos.x < platPos.x) {
-				playerPos.x -= overlap.x;
-			} else {
-				playerPos.x += overlap.x;
-			}
-			player_->SetVelocityX(0.0f);
-		} else {
-			if (playerPos.y > platPos.y) {
-				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
-				float playerHalfHeight = playerSize.y * 0.5f;
-				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f;
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
-
-				// ★★★ ここから変更 ★★★
-				switch (platform->GetItemType()) {
-				case ItemType::SPEED_RESET:
-					// ゲーム内時間を巻き戻して、スピード計算の元から遅くする
-					gameTime_ -= 12.0f; // 10秒ぶん時間を戻します（この数値はお好みで調整してください）
-					// ただし、マイナスにはならないように制御
-					if (gameTime_ < 0.0f) {
-						gameTime_ = 0.0f;
-					}
-					// アイテムの効果は一度だけにするため、使用済みにする
-					platform->SetItemType(ItemType::NONE);
-					break;
-				case ItemType::NONE:
-				default:
-					// アイテムがない場合は何もしない
-					break;
-				}
-				// ★★★ ここまで変更 ★★★
-
-				if (platform->GetDamageDirection() == DamageDirection::TOP) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix();
-							}
-						}
-					}
-				}
-			} else {
-				Vector3 playerSize = playerAABB.GetMax() - playerAABB.GetMin();
-				float playerHalfHeight = playerSize.y * 0.5f;
-				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f;
-				player_->SetVelocityY(0.0f);
-				player_->SetOnGround(true);
-
-				// ★★★ ここから変更 (重力反転時も同様) ★★★
-				switch (platform->GetItemType()) {
-				case ItemType::SPEED_RESET:
-					// ゲーム内時間を巻き戻して、スピード計算の元から遅くする
-					gameTime_ -= 30.0f; // 30秒ぶん時間を戻します
-					// ただし、マイナスにはならないように制御
-					if (gameTime_ < 0.0f) {
-						gameTime_ = 0.0f;
-					}
-					// アイテムの効果は一度だけにするため、使用済みにする
-					platform->SetItemType(ItemType::NONE);
-					break;
-				case ItemType::NONE:
-				default:
-					// アイテムがない場合は何もしない
-					break;
-				}
-				// ★★★ ここまで変更 ★★★
-
-				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix();
-							}
-						}
-					}
-				}
-			}
-		}
-		player_->SetPosition(playerPos);
-	}
-
-	// ▼▼▼ ここから修正・追加 ▼▼▼
-	// HPが0以下になったらゲームオーバーフラグを立てる
-	if (playerHP_ <= 0) {
-		// isGameOver_ = true;
-	}
-	// ▲▲▲ ここまで修正・追加 ▲▲▲
-	// プレイヤーの現在位置
+	// --- 11. スコア加算 ---
 	Vector3 currentPlayerPos = player_->GetPosition();
-
-	// 落下・ジャンプ中か判定
 	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
-
-	// Y座標が変化している場合のみスコア加算
 	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
 		score_++;
 	}
-
 	prevPlayerPos_ = currentPlayerPos;
 	prevOnGround_ = player_->IsOnGround();
-
 	if (score_ != prevScore_) {
 		font_->Set(score_);
 		prevScore_ = score_;
+	}
+
+	// --- 12. HPが0になったらゲームオーバー ---
+	if (playerHP_ <= 0) {
+		// isGameOver_ = true;
 	}
 }
 

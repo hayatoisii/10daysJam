@@ -27,6 +27,11 @@ public:
 
 	const AABB& GetAABB() const { return aabb_; }
 	float GetHalfSizeY() const { return halfSize_.y; }
+	float GetMaxFallSpeed() const { return maxFallSpeed; }
+
+	void TriggerGravityReversal();
+
+	void InterpolateGravity();
 
 	bool IsInversion() const { return inversion; }
 	bool IsOnGround() const { return onGround_; }
@@ -43,6 +48,8 @@ public:
 
 	Vector3 GetPrevPosition() const { return prevPosition_; } // ▼▼▼ 追加 ▼▼▼
 	Vector3 GetHalfSize() const { return halfSize_; }         // ▼▼▼ 追加 ▼▼▼
+
+	 void UpdateWorldMatrix();
 
 private:
 	// 足場のスクロール速度
