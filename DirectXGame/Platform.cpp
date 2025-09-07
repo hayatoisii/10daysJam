@@ -1,8 +1,9 @@
 #include "Platform.h"
 
 // プラットフォームの初期化
-void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera) {
+void Platform::Initialize(const Vector3& pos, const Vector3& scale, DamageDirection direction, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera) {
 	worldTransform_.Initialize();
+	damageDirection_ = direction;
 	worldTransform_.translation_ = pos;
 	worldTransform_.scale_ = scale;
 	// Keep an internal copy of scale for AABB updates

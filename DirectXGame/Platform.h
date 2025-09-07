@@ -21,7 +21,7 @@ enum class ItemType {
 
 class Platform {
 public:
-	void Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera);
+	void Initialize(const Vector3& pos, const Vector3& scale, DamageDirection direction, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera);
 	void Update(bool isPlayerInverted);
 	void Draw();
 

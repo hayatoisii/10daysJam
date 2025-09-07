@@ -18,7 +18,6 @@ GameScene::~GameScene() {
 }
 
 void GameScene::Initialize() {
-	// (この関数の中身は変更ありません)
 	// 再初期化時のクリーンアップ
 	if (player_ != nullptr) {
 		delete player_;
@@ -40,6 +39,8 @@ void GameScene::Initialize() {
 	platformSideFlag = false;
 	lastPlatformX = 0.0f;
 	playerHP_ = 3;
+	score_ = 0;
+	gameTime_ = 0.0f;
 
 	// 乱数エンジンの初期化
 	std::random_device rd;
@@ -50,42 +51,31 @@ void GameScene::Initialize() {
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
 	hpModel_ = KamataEngine::Model::CreateFromOBJ("heart", true);
-	// 上下それぞれのダメージモデルを読み込む
-	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);       // 上向きダメージモデルのファイル名にしてください
-	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true); // 下向きダメージモデルのファイル名にしてください
-
-	// ★ アイテムモデルの読み込み
-	modelPlatformItemSpeedReset_ = KamataEngine::Model::CreateFromOBJ("time", true); // アイテムモデルのファイル名
+	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);
+	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true);
+	modelPlatformItemSpeedReset_ = KamataEngine::Model::CreateFromOBJ("time", true);
 
 	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
 	transformBackground_.Initialize();
-	// Z軸を奥にずらして配置（数値が大きいほど奥になります）
 	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
 	transformBackground_.UpdateMatarix();
 
-	// ▼▼▼ 「sky」背景スプライトの初期化を追加 ▼▼▼
-	skyTextureHandle_ = TextureManager::Load("sky.png"); // skyじゃなくて　背景の岩、に変更する後で
+	// 背景スプライトの初期化
+	skyTextureHandle_ = TextureManager::Load("sky.png");
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
-	float windowWidth = 640;
-	float windowHeight = 720;
+	float windowWidth = (float)WinApp::kWindowWidth;
+	float windowHeight = (float)WinApp::kWindowHeight;
 
-	// 画像サイズを画面に合わせる
 	skySprite1_->SetSize({windowWidth, windowHeight});
 	skySprite2_->SetSize({windowWidth, windowHeight});
-
-	// アンカーポイント（基準点）を画像の中心に設定
 	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
 	skySprite2_->SetAnchorPoint({0.5f, 0.5f});
+	skySprite1_->SetPosition({windowWidth / 2.0f, windowHeight / 2.0f});
+	skySprite2_->SetPosition({windowWidth / 2.0f, windowHeight / 2.0f - windowHeight});
 
-	// 1枚目を画面ぴったりに配置
-	skySprite1_->SetPosition({windowWidth, windowHeight});
-	// 2枚目を1枚目のすぐ上に、画面外に配置
-	skySprite2_->SetPosition({windowWidth, windowHeight - windowHeight});
-	// ▲▲▲ ---------------------------------- ▲▲▲
-
-	// HPワールドトランスフォームを3個作成
+	// HPのUI初期化
 	for (int i = 0; i < playerHP_; i++) {
 		WorldTransform* wt = new WorldTransform();
 		wt->Initialize();
@@ -95,92 +85,66 @@ void GameScene::Initialize() {
 		hpWorldTransforms_.push_back(wt);
 	}
 
-	// プレイヤーのX軸移動範囲を可視化するモデル
+	// 左右の壁の初期化
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
-
-	// 左端（-20, 0, 0）に配置
 	endTransformLeft_.Initialize();
-	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f); // 15でもいいかも 16  20
-
-	// 右端（20, 0, 0）に配置
+	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f);
 	endTransformRight_.Initialize();
-	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f); // 15  16  20
-
+	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f);
 	endTransformLeft_.UpdateMatarix();
 	endTransformRight_.UpdateMatarix();
 
-	// ▼▼▼ 重力反転ライン用スプライトの初期化を追加 ▼▼▼
-	// 上ラインのスプライト（適切な画像ファイル名に置き換えてください。例: "gravityLineTop.png"）
+	// 重力反転ラインのスプライト初期化
 	spriteGravityLineTopHandle_ = TextureManager::Load("Gravityline.png");
-	spriteGravityLineTop_ = Sprite::Create(spriteGravityLineTopHandle_, {0.0f, 0.0f}); // 一旦白い画像で仮作成
-	spriteGravityLineTop_->SetSize({640.0f, 100.0f});                                  // スクリーンの幅いっぱいに細い線
-	spriteGravityLineTop_->SetPosition({320.0f, -4.0f});                               // 画面中央X、上部のY座標
+	spriteGravityLineTop_ = Sprite::Create(spriteGravityLineTopHandle_, {0.0f, 0.0f});
+	spriteGravityLineTop_->SetSize({640.0f, 100.0f});
+	spriteGravityLineTop_->SetPosition({320.0f, -4.0f});
 
-	// 下ラインのスプライト
 	spriteGravityLineBottomHandle_ = TextureManager::Load("Gravityline.png");
-	spriteGravityLineBottom_ = Sprite::Create(spriteGravityLineBottomHandle_, {0.0f, 0.0f}); // 一旦白い画像で仮作成
-	spriteGravityLineBottom_->SetSize({640.0f, 100.0f});                                     // スクリーンの幅いっぱいに細い線
-	spriteGravityLineBottom_->SetPosition({320.0f, 625.0f});                                 // 画面中央X、下部のY座標
-	// ▲▲▲ ---------------------------------- ▲▲▲
+	spriteGravityLineBottom_ = Sprite::Create(spriteGravityLineBottomHandle_, {0.0f, 0.0f});
+	spriteGravityLineBottom_->SetSize({640.0f, 100.0f});
+	spriteGravityLineBottom_->SetPosition({320.0f, 625.0f});
 
 	// カメラ初期化
 	camera_.Initialize();
 
 	// プレイヤー初期化
-	Vector3 playerPos = {0, 0, 0};
+	Vector3 playerPos = {0, 5, 0}; // 少し上から開始
 	player_ = new Player();
 	player_->Initialize(modelPlayer_, &camera_, playerPos);
 
-	// --- 足場生成処理 ---
-
-	// 1. プレイヤーの真下に安全な足場を1つ生成する
+	// --- 初期足場生成 ---
 	{
 		Platform* firstPlatform = new Platform();
 		Vector3 pos = {0.0f, -2.0f, 0.0f};
-		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
-		// Initializeにアイテムモデルも渡す
-		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-		firstPlatform->SetDamageDirection(DamageDirection::NONE); // 無害
+		Vector3 scale = {1.3f, 1.0f, 1.0f};
+		firstPlatform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 		platforms_.push_back(firstPlatform);
 	}
 
-	// 2. 残りの足場をランダムに生成する
 	std::uniform_real_distribution<float> posX(-20.0f, 20.0f);
 	std::uniform_real_distribution<float> posY(0.0f, 40.0f);
 
 	for (int i = 0; i < platformCount - 1; i++) {
 		Vector3 pos = {posX(randomEngine_), posY(randomEngine_), 0.0f};
-		Vector3 scale = {1.5f, 1.2f, 1.0f}; // 通常スケール
-
+		Vector3 scale = {1.5f, 1.2f, 1.0f};
 		Platform* platform = new Platform();
 
-		// 50%の確率でダメージ足場を生成
 		std::uniform_int_distribution<int> dist01(0, 1);
 		if (dist01(randomEngine_) == 1) {
-			// ダメージ床の場合、スケールを1.5倍に変更
 			scale = {1.5f, 1.8f, 1.0f};
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-
-			// プレイヤーの重力方向に応じて危険な面を設定
-			if (player_->IsInversion()) {
-				platform->SetDamageDirection(DamageDirection::BOTTOM);
-			} else {
-				platform->SetDamageDirection(DamageDirection::TOP);
-			}
-			// ダメージ足場の当たり判定を少しだけ上に（小さめ）+ 高さを薄く
+			DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
+			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			platform->SetDamageColliderYOffset(0.05f);
 			platform->SetDamageColliderScaleY(0.7f);
-			// 安全側（ダメージじゃない方）を少し小さく
 			platform->SetSafeSideScaleY(0.8f);
 		} else {
-			// 通常の足場
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-			platform->SetDamageDirection(DamageDirection::NONE);
+			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 		}
 		platforms_.push_back(platform);
 	}
-	worldTransform.Initialize();
 
+	worldTransform.Initialize();
 	font_ = new BIt_Map_Font();
 	font_->Initialize();
 }
@@ -212,17 +176,12 @@ void GameScene::Update() {
 		std::uniform_int_distribution<int> dist10(0, 9);
 		if (dist10(randomEngine_) < 6) {
 			scale = {1.3f, 1.5f, 1.0f};
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-			if (player_->IsInversion()) {
-				platform->SetDamageDirection(DamageDirection::BOTTOM);
-			} else {
-				platform->SetDamageDirection(DamageDirection::TOP);
-			}
+			DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
+			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			platform->SetDamageColliderScaleY(1.2f);
-			platform->SetSafeSideScaleY(1.0f);
+			platform->SetSafeSideScaleY(0.8f);
 		} else {
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-			platform->SetDamageDirection(DamageDirection::NONE);
+			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			std::uniform_int_distribution<int> itemDist(0, 19);
 			if (itemDist(randomEngine_) == 0) {
 				platform->SetItemType(ItemType::SPEED_RESET);
@@ -266,9 +225,8 @@ void GameScene::Update() {
 	playerPos.y += velocityY;
 	player_->SetPosition(playerPos);
 
-	// ★★★ ここからが追加ブロックです ★★★
 	// X軸の移動範囲制限を適用する
-	playerPos = player_->GetPosition(); // 最新の位置を取得
+	playerPos = player_->GetPosition();
 	if (playerPos.x < player_->GetMinX()) {
 		playerPos.x = player_->GetMinX();
 	}
@@ -276,17 +234,13 @@ void GameScene::Update() {
 		playerPos.x = player_->GetMaxX();
 	}
 	player_->SetPosition(playerPos);
-	// ★★★ 追加ブロックはここまで ★★★
 
 	// --- 6. 当たり判定 ---
 	player_->SetOnGround(false);
 
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
-		const AABB& playerAABB = player_->GetAABB();
 
-		// このフレームの移動を包括するAABBを作成し、すり抜けを防ぐ
-		playerPos = player_->GetPosition();
 		Vector3 prevPlayerPos = player_->GetPrevPosition();
 		Vector3 playerHalfSize = player_->GetHalfSize();
 		AABB broadPhaseAABB;
@@ -298,15 +252,11 @@ void GameScene::Update() {
 			continue;
 		}
 
-		// 前フレームのプレイヤーのAABBを計算
+		const AABB& playerAABB = player_->GetAABB();
 		AABB prevPlayerAABB;
 		prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
 
-		// ★★★ ここからが重要な変更点です ★★★
-		// 浮動小数点数の誤差を許容するための「許容値(epsilon)」
 		float epsilon = 0.01f;
-
-		// 前フレームで、プレイヤーが足場の上下左右のどの位置にいたかを判定（許容値を追加）
 		bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
 		bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
 		bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
@@ -315,11 +265,11 @@ void GameScene::Update() {
 		playerPos = player_->GetPosition();
 		bool collisionHandled = false;
 
-		// --- 優先度1: 上下からの着地を判定 ---
 		if (wasAbove && player_->GetVelocityY() <= 0.0f) {
 			playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
 			player_->SetOnGround(true);
-			// (着地時の処理...)
+			collisionHandled = true;
+
 			switch (platform->GetItemType()) {
 			case ItemType::SPEED_RESET:
 				gameTime_ -= 12.0f;
@@ -343,11 +293,11 @@ void GameScene::Update() {
 					}
 				}
 			}
-			collisionHandled = true;
 		} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
 			playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
 			player_->SetOnGround(true);
-			// (着地時の処理...)
+			collisionHandled = true;
+
 			switch (platform->GetItemType()) {
 			case ItemType::SPEED_RESET:
 				gameTime_ -= 12.0f;
@@ -371,10 +321,8 @@ void GameScene::Update() {
 					}
 				}
 			}
-			collisionHandled = true;
 		}
 
-		// --- 優先度2: 左右からの壁衝突を判定 ---
 		if (!collisionHandled && (wasLeft || wasRight)) {
 			if (playerPos.x < platform->GetWorldPosition().x) {
 				playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
@@ -385,9 +333,7 @@ void GameScene::Update() {
 			collisionHandled = true;
 		}
 
-		// --- 優先度3: フォールバック（緊急脱出）処理 ---
 		if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
-			// 上にも下にも横にもいなかった＝既にめり込んでいた場合、強制的に押し出す
 			if (!player_->IsInversion()) {
 				playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
 				player_->SetOnGround(true);
@@ -482,9 +428,13 @@ void GameScene::Update() {
 		prevScore_ = score_;
 	}
 
-	// --- 12. HPが0になったらゲームオーバー ---
+	// --- 12. ゲームオーバー判定 ---
 	if (playerHP_ <= 0) {
-		// isGameOver_ = true;
+		isGameOver_ = true;
+	}
+	playerPos = player_->GetPosition();
+	if (playerPos.y > 23.0f || playerPos.y < -23.0f) {
+		isGameOver_ = true;
 	}
 }
 
