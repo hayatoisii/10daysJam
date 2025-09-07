@@ -12,11 +12,21 @@ enum class DamageDirection {
 	BOTTOM, // 下面が危険
 };
 
+// ★ 新設：アイテムの種類を示す列挙型
+enum class ItemType {
+	NONE,        // アイテムなし
+	SPEED_RESET, // スピードをリセットするアイテム
+	             // 今後、ここへ新しいアイテムを追加していく
+};
+
 class Platform {
 public:
-	void Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Camera* camera);
-	void Update();
+	void Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera);
+	void Update(bool isPlayerInverted);
 	void Draw();
+
+	void SetItemType(ItemType type) { itemType_ = type; }
+	ItemType GetItemType() const { return itemType_; }
 
 	const AABB& GetAABB() const { return aabb_; }
 
@@ -51,6 +61,10 @@ private:
 	Vector3 baseSize_ = {5.0f, 2.5f, 0.15f};
 	Vector3 scale_ = {1.0f, 1.0f, 1.0f};
 	AABB aabb_;
+
+	Model* itemSpeedResetModel_ = nullptr; // スピードリセットアイテムのモデル
+	ItemType itemType_ = ItemType::NONE;
+	WorldTransform itemWorldTransform_;
 
 	Model* normalModel_ = nullptr;
 	// ★変更：ダメージモデルを2つに分ける

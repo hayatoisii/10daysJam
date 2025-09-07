@@ -73,6 +73,8 @@ private:
 	Model* modelDamageTop_ = nullptr;    // 上面が危険な足場モデル
 	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
 
+	Model* modelPlatformItemSpeedReset_ = nullptr;
+
 	KamataEngine::Model* modelBackground_ = nullptr;
 	WorldTransform transformBackground_;
 

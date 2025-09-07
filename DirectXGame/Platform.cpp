@@ -1,13 +1,24 @@
 #include "Platform.h"
 
 // プラットフォームの初期化
-void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Camera* camera) {
+void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera) {
 	worldTransform_.Initialize();
 	worldTransform_.translation_ = pos;
 	worldTransform_.scale_ = scale;
 	// Keep an internal copy of scale for AABB updates
 	scale_ = scale;
+
+	// ★ アイテム用のWorldTransformを初期化
+	itemWorldTransform_.Initialize();
+	// ★ 親子関係を設定。これで足場が動くとアイテムも一緒に動く。
+	itemWorldTransform_.parent_ = &worldTransform_;
+	// ★ 足場の中心から、Y軸方向に少しずらした位置をアイテムの座標とする
+	itemWorldTransform_.translation_ = {0.0f, 2.0f, 0.0f}; // このY値で高さを調整
+
 	worldTransform_.UpdateMatarix();
+	// ★ 子のこちらも更新しておく
+	itemWorldTransform_.UpdateMatarix();
+
 	// 初期AABBもUpdateと同じ式で計算し、ダメージ足場ならオフセット
 	{
 		Vector3 initPos = pos;
@@ -18,18 +29,34 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* norma
 			// 片側のみ高さを拡張/縮小（危険面の方向に拡張）+ 安全側調整
 			float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
 			if (delta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
+				if (damageDirection_ == DamageDirection::TOP) {
+					maxV.y += delta;
+				} else {
+					minV.y -= delta;
+				}
 			} else if (delta < 0.0f) {
 				float shrink = -delta;
-				if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
+				if (damageDirection_ == DamageDirection::TOP) {
+					maxV.y -= shrink;
+				} else {
+					minV.y += shrink;
+				}
 			}
 			// 安全側（反対側）をスケール
 			float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
 			if (safeDelta < 0.0f) {
 				float safeShrink = -safeDelta;
-				if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
+				if (damageDirection_ == DamageDirection::TOP) {
+					minV.y += safeShrink;
+				} else {
+					maxV.y -= safeShrink;
+				}
 			} else if (safeDelta > 0.0f) {
-				if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
+				if (damageDirection_ == DamageDirection::TOP) {
+					minV.y -= safeDelta;
+				} else {
+					maxV.y += safeDelta;
+				}
 			}
 			// オフセット（TOPは上へ、BOTTOMは下へ）
 			if (damageDirection_ == DamageDirection::TOP) {
@@ -44,10 +71,11 @@ void Platform::Initialize(const Vector3& pos, const Vector3& scale, Model* norma
 	}
 	this->camera_ = camera;
 
-	// 3つのモデルへのポインタを保持
+	// モデルへのポインタを保持
 	this->normalModel_ = normalModel;
 	this->damageTopModel_ = damageTopModel;
 	this->damageBottomModel_ = damageBottomModel;
+	this->itemSpeedResetModel_ = itemSpeedResetModel;
 }
 
 // スクロール速度の設定
@@ -57,9 +85,19 @@ void Platform::SetScrollSpeed(float speed) { platformScrollSpeed = speed; }
 Vector3 Platform::GetWorldPosition() const { return worldTransform_.translation_; }
 
 // プラットフォームの更新処理
-void Platform::Update() {
+void Platform::Update(bool isPlayerInverted) { // ★ 変更：引数を追加
 	// Y軸方向にスクロール速度分移動
 	worldTransform_.translation_.y += platformScrollSpeed;
+
+	// プレイヤーの重力状態に応じてアイテムのY座標を切り替える
+	if (isPlayerInverted) {
+		// 重力反転時：足場の下側にアイテムを配置
+		itemWorldTransform_.translation_.y = -2.0f;
+
+	} else {
+		// 通常時：足場の上側にアイテムを配置
+		itemWorldTransform_.translation_.y = 2.0f;
+	}
 
 	// AABBを現在の位置・スケールに合わせて更新
 	Vector3 pos = worldTransform_.translation_;
@@ -69,18 +107,34 @@ void Platform::Update() {
 	if (damageDirection_ == DamageDirection::TOP || damageDirection_ == DamageDirection::BOTTOM) {
 		float delta = baseHalf.y * (damageColliderScaleY_ - 1.0f);
 		if (delta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) { maxV.y += delta; } else { minV.y -= delta; }
+			if (damageDirection_ == DamageDirection::TOP) {
+				maxV.y += delta;
+			} else {
+				minV.y -= delta;
+			}
 		} else if (delta < 0.0f) {
 			float shrink = -delta;
-			if (damageDirection_ == DamageDirection::TOP) { maxV.y -= shrink; } else { minV.y += shrink; }
+			if (damageDirection_ == DamageDirection::TOP) {
+				maxV.y -= shrink;
+			} else {
+				minV.y += shrink;
+			}
 		}
 		// 安全側（反対側）をスケール
 		float safeDelta = baseHalf.y * (safeSideScaleY_ - 1.0f);
 		if (safeDelta < 0.0f) {
 			float safeShrink = -safeDelta;
-			if (damageDirection_ == DamageDirection::TOP) { minV.y += safeShrink; } else { maxV.y -= safeShrink; }
+			if (damageDirection_ == DamageDirection::TOP) {
+				minV.y += safeShrink;
+			} else {
+				maxV.y -= safeShrink;
+			}
 		} else if (safeDelta > 0.0f) {
-			if (damageDirection_ == DamageDirection::TOP) { minV.y -= safeDelta; } else { maxV.y += safeDelta; }
+			if (damageDirection_ == DamageDirection::TOP) {
+				minV.y -= safeDelta;
+			} else {
+				maxV.y += safeDelta;
+			}
 		}
 		// オフセット（TOPは上へ、BOTTOMは下へ）
 		if (damageDirection_ == DamageDirection::TOP) {
@@ -95,12 +149,13 @@ void Platform::Update() {
 
 	// ワールド行列の更新
 	worldTransform_.UpdateMatarix();
+	// ★★★ 追加：子のアイテムTransformも更新する ★★★
+	itemWorldTransform_.UpdateMatarix();
 }
 
-// Platform.cpp
-
+// 描画処理
 void Platform::Draw() {
-	// どのモデルを描画するかを damageDirection_ に基づいて決定する
+	// --- 1. 足場本体を描画 ---
 	switch (damageDirection_) {
 	case DamageDirection::TOP:
 		// 上面が危険な場合 -> 上向きダメージモデルを描画
@@ -123,5 +178,11 @@ void Platform::Draw() {
 			normalModel_->Draw(worldTransform_, *camera_);
 		}
 		break;
+	}
+
+	// --- 2. もしアイテムを持っているなら、追加でアイテムを描画 ---
+	if (itemType_ == ItemType::SPEED_RESET && itemSpeedResetModel_) {
+		// アイテム専用のTransformを使って描画する
+		itemSpeedResetModel_->Draw(itemWorldTransform_, *camera_);
 	}
 }

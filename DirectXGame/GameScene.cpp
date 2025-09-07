@@ -53,8 +53,9 @@ void GameScene::Initialize() {
 	// 上下それぞれのダメージモデルを読み込む
 	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);       // 上向きダメージモデルのファイル名にしてください
 	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true); // 下向きダメージモデルのファイル名にしてください
-	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);
-	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true);
+
+	// ★ アイテムモデルの読み込み
+	modelPlatformItemSpeedReset_ = KamataEngine::Model::CreateFromOBJ("time", true); // アイテムモデルのファイル名
 
 	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
 	transformBackground_.Initialize();
@@ -63,7 +64,7 @@ void GameScene::Initialize() {
 	transformBackground_.UpdateMatarix();
 
 	// ▼▼▼ 「sky」背景スプライトの初期化を追加 ▼▼▼
-	skyTextureHandle_ = TextureManager::Load("sky.png");
+	skyTextureHandle_ = TextureManager::Load("sky.png"); //skyじゃなくて　背景の岩、に変更する後で
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
@@ -101,7 +102,6 @@ void GameScene::Initialize() {
 	endTransformLeft_.Initialize();
 	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f); // 15でもいいかも 16  20
 
-
 	// 右端（20, 0, 0）に配置
 	endTransformRight_.Initialize();
 	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f); // 15  16  20
@@ -137,10 +137,9 @@ void GameScene::Initialize() {
 	{
 		Platform* firstPlatform = new Platform();
 		Vector3 pos = {0.0f, -2.0f, 0.0f};
-		// Vector3 scale = {1.5f, 1.2f, 1.0f};
 		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
-		// Initializeに3種類のモデルを全て渡す
-		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+		// Initializeにアイテムモデルも渡す
+		firstPlatform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 		firstPlatform->SetDamageDirection(DamageDirection::NONE); // 無害
 		platforms_.push_back(firstPlatform);
 	}
@@ -160,7 +159,7 @@ void GameScene::Initialize() {
 		if (dist01(randomEngine_) == 1) {
 			// ダメージ床の場合、スケールを1.5倍に変更
 			scale = {1.5f, 1.8f, 1.0f};
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 
 			// プレイヤーの重力方向に応じて危険な面を設定
 			if (player_->IsInversion()) {
@@ -175,7 +174,7 @@ void GameScene::Initialize() {
 			platform->SetSafeSideScaleY(0.8f);
 		} else {
 			// 通常の足場
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			platform->SetDamageDirection(DamageDirection::NONE);
 		}
 		platforms_.push_back(platform);
@@ -188,7 +187,7 @@ void GameScene::Initialize() {
 
 void GameScene::Update() {
 	gameTime_ += 1.0f / 60.0f;
-	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 1.0f;
+	speedMultiplier_ = 1.0f + (gameTime_ / 30.0f) * 1.5f;
 	if (speedMultiplier_ > 200.0f) {
 		speedMultiplier_ = 200.0f;
 	}
@@ -199,16 +198,15 @@ void GameScene::Update() {
 		// X座標を左右交互の範囲で決める
 		float x;
 		if (platformSideFlag) {
-			std::uniform_real_distribution<float> posX(-17.0f, 0.0f); // 13でもいいかも　14　　　20
+			std::uniform_real_distribution<float> posX(-17.0f, 0.0f); // 13でもいいかも 14     20
 			x = posX(randomEngine_);
 		} else {
-			std::uniform_real_distribution<float> posX(0.0f, 17.0f); // 13ｄもいいかも　14　　　20
+			std::uniform_real_distribution<float> posX(0.0f, 17.0f); // 13ｄもいいかも 14     20
 			x = posX(randomEngine_);
 		}
 		platformSideFlag = !platformSideFlag;
 
 		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
-		// Vector3 scale = {1.5f, 1.2f, 1.0f};
 		Vector3 scale = {1.3f, 1.0f, 1.0f}; // 1.0でもいいかも
 
 		Platform* platform = new Platform();
@@ -216,9 +214,9 @@ void GameScene::Update() {
 		// 60%の確率でダメージ足場を生成
 		std::uniform_int_distribution<int> dist10(0, 9); // 0から9の乱数を生成
 		if (dist10(randomEngine_) < 6) {
-			// scale = {1.5f, 1.8f, 1.0f};
 			scale = {1.3f, 1.5f, 1.0f}; // 1.0でもいいかも
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			// ★★★ 変更点：アイテムモデルの引数を追加 ★★★
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 
 			// プレイヤーの重力方向に応じて危険な面を設定
 			if (player_->IsInversion()) {
@@ -227,12 +225,21 @@ void GameScene::Update() {
 				platform->SetDamageDirection(DamageDirection::TOP);
 			}
 			// ダメージ足場の当たり判定の厚み（危険側のみ反映）
-			platform->SetDamageColliderScaleY(1.4f);
+			platform->SetDamageColliderScaleY(1.2f);//1.4
 			// 安全側（ダメージじゃない方）を少し小さく
 			platform->SetSafeSideScaleY(1.0f);
 		} else {
-			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, &camera_);
+			// ★★★ 変更点：アイテムモデルの引数を追加 ★★★
+			platform->Initialize(pos, scale, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
 			platform->SetDamageDirection(DamageDirection::NONE);
+
+			// ★★★ ここから追加：10%の確率でアイテム付き足場にする ★★★
+			// 通常の足場が生成される場合にのみ、アイテム化の抽選を行う
+			std::uniform_int_distribution<int> itemDist(0, 19); // 0から19の乱数を生成 (20種類)
+			if (itemDist(randomEngine_) == 0) {                 // 0が出た場合 (5%の確率)
+				platform->SetItemType(ItemType::SPEED_RESET);
+			}
+			// ★★★ ここまで追加 ★★★
 		}
 		platforms_.push_back(platform);
 		lastPlatformX = x;
@@ -245,7 +252,7 @@ void GameScene::Update() {
 
 	for (auto platform : platforms_) {
 		platform->SetScrollSpeed(scrollSpeed);
-		platform->Update();
+		platform->Update(player_->IsInversion());
 	}
 
 	if (skySprite1_ && skySprite2_) {
@@ -318,7 +325,7 @@ void GameScene::Update() {
 
 	player_->SetOnGround(false);
 
-	// --- 衝突判定 ---
+// --- 衝突判定 ---
 	for (auto platform : platforms_) {
 		const AABB& platformAABB = platform->GetAABB();
 		const AABB& playerAABB = player_->GetAABB();
@@ -344,6 +351,26 @@ void GameScene::Update() {
 				playerPos.y = platformAABB.GetMax().y + playerHalfHeight + 0.01f;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
+
+				// ★★★ ここから変更 ★★★
+				switch (platform->GetItemType()) {
+				case ItemType::SPEED_RESET:
+					// ゲーム内時間を巻き戻して、スピード計算の元から遅くする
+					gameTime_ -= 12.0f; // 10秒ぶん時間を戻します（この数値はお好みで調整してください）
+					// ただし、マイナスにはならないように制御
+					if (gameTime_ < 0.0f) {
+						gameTime_ = 0.0f;
+					}
+					// アイテムの効果は一度だけにするため、使用済みにする
+					platform->SetItemType(ItemType::NONE);
+					break;
+				case ItemType::NONE:
+				default:
+					// アイテムがない場合は何もしない
+					break;
+				}
+				// ★★★ ここまで変更 ★★★
+
 				if (platform->GetDamageDirection() == DamageDirection::TOP) {
 					if (!player_->IsInvincible()) {
 						if (playerHP_ > 0) {
@@ -362,6 +389,26 @@ void GameScene::Update() {
 				playerPos.y = platformAABB.GetMin().y - playerHalfHeight - 0.01f;
 				player_->SetVelocityY(0.0f);
 				player_->SetOnGround(true);
+
+				// ★★★ ここから変更 (重力反転時も同様) ★★★
+				switch (platform->GetItemType()) {
+				case ItemType::SPEED_RESET:
+					// ゲーム内時間を巻き戻して、スピード計算の元から遅くする
+					gameTime_ -= 30.0f; // 30秒ぶん時間を戻します
+					// ただし、マイナスにはならないように制御
+					if (gameTime_ < 0.0f) {
+						gameTime_ = 0.0f;
+					}
+					// アイテムの効果は一度だけにするため、使用済みにする
+					platform->SetItemType(ItemType::NONE);
+					break;
+				case ItemType::NONE:
+				default:
+					// アイテムがない場合は何もしない
+					break;
+				}
+				// ★★★ ここまで変更 ★★★
+
 				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
 					if (!player_->IsInvincible()) {
 						if (playerHP_ > 0) {
@@ -404,7 +451,6 @@ void GameScene::Update() {
 		prevScore_ = score_;
 	}
 }
-
 
 void GameScene::Draw() {
 	// (この関数の中身は変更ありません)
