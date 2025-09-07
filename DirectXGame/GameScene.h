@@ -74,6 +74,7 @@ private:
 	Model* modelDamageBottom_ = nullptr; // 下面が危険な足場モデル
 
 	Model* modelPlatformItemSpeedReset_ = nullptr;
+	Model* modelItemHpRecovery_ = nullptr; // ★追加：HP回復アイテムモデル
 
 	KamataEngine::Model* modelBackground_ = nullptr;
 	WorldTransform transformBackground_;

@@ -12,23 +12,24 @@ enum class DamageDirection {
 	BOTTOM, // 下面が危険
 };
 
-// ★ 新設：アイテムの種類を示す列挙型
+// アイテムの種類を示す列挙型
 enum class ItemType {
 	NONE,        // アイテムなし
 	SPEED_RESET, // スピードをリセットするアイテム
-	             // 今後、ここへ新しいアイテムを追加していく
+	HP_RECOVERY, // HPを回復するアイテム
 };
 
 class Platform {
 public:
-	void Initialize(const Vector3& pos, const Vector3& scale, DamageDirection direction, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel, Camera* camera);
-	void Update(bool isPlayerInverted);
+	void Initialize(const Vector3& pos, const Vector3& scale, DamageDirection direction, Model* normalModel, Model* damageTopModel, Model* damageBottomModel, Model* itemSpeedResetModel,Model* itemHpRecoveryModel, Camera* camera);
+	void Update();
 	void Draw();
 
-	void SetItemType(ItemType type) { itemType_ = type; }
+	void SetItemType(ItemType type, bool isPlayerInverted);
 	ItemType GetItemType() const { return itemType_; }
 
 	const AABB& GetAABB() const { return aabb_; }
+	const AABB& GetItemAABB() const { return itemAABB_; }
 
 	void SetScrollSpeed(float speed);
 
@@ -37,20 +38,15 @@ public:
 	bool IsDamage() const { return isDamage_; }
 	void SetDamage(bool flag) { isDamage_ = flag; }
 
-	// SetDamageをSetDamageDirectionに変更
 	void SetDamageDirection(DamageDirection direction);
-	// IsDamageをGetDamageDirectionに変更
 	DamageDirection GetDamageDirection() const;
 
-	// ダメージ足場の当たり判定を上方向にずらす量を設定
 	void SetDamageColliderYOffset(float offset) { damageColliderYOffset_ = offset; }
-	// ダメージ足場の当たり判定の高さスケールを設定（1.0が等倍）
 	void SetDamageColliderScaleY(float scale) { damageColliderScaleY_ = scale; }
-	// 安全側（ダメージではない側）の高さスケール（1.0が等倍、<1.0で小さく）
 	void SetSafeSideScaleY(float scale) { safeSideScaleY_ = scale; }
 
 private:
-	float platformScrollSpeed = 0.2f; // 足場の上方向移動速度
+	float platformScrollSpeed = 0.2f;
 
 	bool isDamage_ = false;
 
@@ -61,22 +57,21 @@ private:
 	Vector3 baseSize_ = {5.0f, 2.5f, 0.15f};
 	Vector3 scale_ = {1.0f, 1.0f, 1.0f};
 	AABB aabb_;
+	AABB itemAABB_;
 
-	Model* itemSpeedResetModel_ = nullptr; // スピードリセットアイテムのモデル
+	Model* itemSpeedResetModel_ = nullptr;
+	Model* itemHpRecoveryModel_ = nullptr;
 	ItemType itemType_ = ItemType::NONE;
+	bool itemIsOnBottom_ = false;
 	WorldTransform itemWorldTransform_;
 
 	Model* normalModel_ = nullptr;
-	// ★変更：ダメージモデルを2つに分ける
 	Model* damageTopModel_ = nullptr;
 	Model* damageBottomModel_ = nullptr;
 
 	DamageDirection damageDirection_ = DamageDirection::NONE;
 
-	// ダメージ足場用AABBのYオフセット（+で上にずらす）
 	float damageColliderYOffset_ = 0.1f;
-	// ダメージ足場用AABBの高さスケール（1.0が等倍。小さいほど薄くなる）
 	float damageColliderScaleY_ = 1.0f;
-	// 安全側（反対側）高さスケール（1.0が等倍。小さくして安全側を少し削る）
 	float safeSideScaleY_ = 1.0f;
 };

@@ -22,3 +22,12 @@ void WorldTransform::UpdateMatarix() {
 
 	TransferMatrix();
 }
+
+Vector3 WorldTransform::GetWorldPosition() const {
+	// ワールド行列の4行目（インデックスは3）が座標を示しています
+	Vector3 worldPos;
+	worldPos.x = matWorld_.m[3][0];
+	worldPos.y = matWorld_.m[3][1];
+	worldPos.z = matWorld_.m[3][2];
+	return worldPos;
+}

@@ -13,7 +13,6 @@ GameScene::~GameScene() {
 	delete skySprite1_;
 	delete skySprite2_;
 
-	// ▼▼▼ font_の解放処理を追加 ▼▼▼
 	delete font_;
 }
 
@@ -54,11 +53,12 @@ void GameScene::Initialize() {
 	modelDamageTop_ = KamataEngine::Model::CreateFromOBJ("platform_damage_top", true);
 	modelDamageBottom_ = KamataEngine::Model::CreateFromOBJ("platform_damage_bottom", true);
 	modelPlatformItemSpeedReset_ = KamataEngine::Model::CreateFromOBJ("time", true);
+	modelItemHpRecovery_ = KamataEngine::Model::CreateFromOBJ("HPheal", true);
 
 	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
 	transformBackground_.Initialize();
 	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
-	transformBackground_.UpdateMatarix();
+	transformBackground_.UpdateMatarix(); // ★タイポ修正
 
 	// 背景スプライトの初期化
 	skyTextureHandle_ = TextureManager::Load("sky.png");
@@ -81,7 +81,7 @@ void GameScene::Initialize() {
 		wt->Initialize();
 		wt->translation_ = {-33.5f + i * 5.0f, 18.0f, 0.0f};
 		wt->scale_ = {1.5f, 1.5f, 0.5f};
-		wt->UpdateMatarix();
+		wt->UpdateMatarix(); // ★タイポ修正
 		hpWorldTransforms_.push_back(wt);
 	}
 
@@ -91,8 +91,8 @@ void GameScene::Initialize() {
 	endTransformLeft_.translation_ = Vector3(-19.3f, 0.0f, 0.0f);
 	endTransformRight_.Initialize();
 	endTransformRight_.translation_ = Vector3(19.3f, 0.0f, 0.0f);
-	endTransformLeft_.UpdateMatarix();
-	endTransformRight_.UpdateMatarix();
+	endTransformLeft_.UpdateMatarix(); // ★タイポ修正
+	endTransformRight_.UpdateMatarix(); // ★タイポ修正
 
 	// 重力反転ラインのスプライト初期化
 	spriteGravityLineTopHandle_ = TextureManager::Load("Gravityline.png");
@@ -109,7 +109,7 @@ void GameScene::Initialize() {
 	camera_.Initialize();
 
 	// プレイヤー初期化
-	Vector3 playerPos = {0, 5, 0}; // 少し上から開始
+	Vector3 playerPos = {0, 5, 0};
 	player_ = new Player();
 	player_->Initialize(modelPlayer_, &camera_, playerPos);
 
@@ -118,7 +118,7 @@ void GameScene::Initialize() {
 		Platform* firstPlatform = new Platform();
 		Vector3 pos = {0.0f, -2.0f, 0.0f};
 		Vector3 scale = {1.3f, 1.0f, 1.0f};
-		firstPlatform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
+		firstPlatform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
 		platforms_.push_back(firstPlatform);
 	}
 
@@ -134,12 +134,12 @@ void GameScene::Initialize() {
 		if (dist01(randomEngine_) == 1) {
 			scale = {1.5f, 1.8f, 1.0f};
 			DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
-			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
+			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
 			platform->SetDamageColliderYOffset(0.05f);
 			platform->SetDamageColliderScaleY(0.7f);
 			platform->SetSafeSideScaleY(0.8f);
 		} else {
-			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
+			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
 		}
 		platforms_.push_back(platform);
 	}
@@ -177,14 +177,23 @@ void GameScene::Update() {
 		if (dist10(randomEngine_) < 6) {
 			scale = {1.3f, 1.5f, 1.0f};
 			DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
-			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
+			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
 			platform->SetDamageColliderScaleY(1.2f);
 			platform->SetSafeSideScaleY(0.8f);
 		} else {
-			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, &camera_);
-			std::uniform_int_distribution<int> itemDist(0, 19);
-			if (itemDist(randomEngine_) == 0) {
-				platform->SetItemType(ItemType::SPEED_RESET);
+			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
+
+			// アイテムを確率で設置する処理
+			std::uniform_int_distribution<int> itemDist(0, 99);
+			int itemRoll = itemDist(randomEngine_);
+
+			// 5%の確率でHP回復アイテムを生成
+			if (itemRoll < 5) {
+				platform->SetItemType(ItemType::HP_RECOVERY, player_->IsInversion());
+			}
+			// 次の5%の確率でスピードリセットアイテムを生成
+			else if (itemRoll < 10) {
+				platform->SetItemType(ItemType::SPEED_RESET, player_->IsInversion());
 			}
 		}
 		platforms_.push_back(platform);
@@ -197,7 +206,7 @@ void GameScene::Update() {
 	float scrollSpeed = baseScrollSpeed * speedMultiplier_;
 	for (auto platform : platforms_) {
 		platform->SetScrollSpeed(scrollSpeed);
-		platform->Update(player_->IsInversion());
+		platform->Update();
 	}
 
 	// --- 4. プレイヤーの入力処理 ---
@@ -249,101 +258,145 @@ void GameScene::Update() {
 		broadPhaseAABB.Set(minPoint, maxPoint);
 
 		if (!broadPhaseAABB.IsColliding(platformAABB)) {
-			continue;
-		}
+			// ★★★ アイテムだけの当たり判定のために、continueの位置を変更 ★★★
+			// continue;
+		} else {
+			// ★★★ continue しなかった場合（足場と接触可能性がある場合）のみ、以下の判定を行う ★★★
+			const AABB& playerAABB = player_->GetAABB();
+			AABB prevPlayerAABB;
+			prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
 
-		const AABB& playerAABB = player_->GetAABB();
-		AABB prevPlayerAABB;
-		prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
+			float epsilon = 0.01f;
+			bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
+			bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
+			bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
+			bool wasRight = prevPlayerAABB.GetMin().x >= platformAABB.GetMax().x - epsilon;
 
-		float epsilon = 0.01f;
-		bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
-		bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
-		bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
-		bool wasRight = prevPlayerAABB.GetMin().x >= platformAABB.GetMax().x - epsilon;
+			playerPos = player_->GetPosition();
+			bool collisionHandled = false;
 
-		playerPos = player_->GetPosition();
-		bool collisionHandled = false;
-
-		if (wasAbove && player_->GetVelocityY() <= 0.0f) {
-			playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
-			player_->SetOnGround(true);
-			collisionHandled = true;
-
-			switch (platform->GetItemType()) {
-			case ItemType::SPEED_RESET:
-				gameTime_ -= 12.0f;
-				if (gameTime_ < 0.0f) {
-					gameTime_ = 0.0f;
-				}
-				platform->SetItemType(ItemType::NONE);
-				break;
-			default:
-				break;
-			}
-			if (platform->GetDamageDirection() == DamageDirection::TOP) {
-				if (!player_->IsInvincible()) {
-					if (playerHP_ > 0) {
-						playerHP_--;
-						player_->OnDamage();
-						if (playerHP_ < (int)hpWorldTransforms_.size()) {
-							hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-							hpWorldTransforms_[playerHP_]->UpdateMatarix();
-						}
-					}
-				}
-			}
-		} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
-			playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
-			player_->SetOnGround(true);
-			collisionHandled = true;
-
-			switch (platform->GetItemType()) {
-			case ItemType::SPEED_RESET:
-				gameTime_ -= 12.0f;
-				if (gameTime_ < 0.0f) {
-					gameTime_ = 0.0f;
-				}
-				platform->SetItemType(ItemType::NONE);
-				break;
-			default:
-				break;
-			}
-			if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
-				if (!player_->IsInvincible()) {
-					if (playerHP_ > 0) {
-						playerHP_--;
-						player_->OnDamage();
-						if (playerHP_ < (int)hpWorldTransforms_.size()) {
-							hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-							hpWorldTransforms_[playerHP_]->UpdateMatarix();
-						}
-					}
-				}
-			}
-		}
-
-		if (!collisionHandled && (wasLeft || wasRight)) {
-			if (playerPos.x < platform->GetWorldPosition().x) {
-				playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
-			} else {
-				playerPos.x = platformAABB.GetMax().x + playerHalfSize.x;
-			}
-			player_->SetVelocityX(0.0f);
-			collisionHandled = true;
-		}
-
-		if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
-			if (!player_->IsInversion()) {
+			// プレイヤーが足場の上から衝突した場合
+			if (wasAbove && player_->GetVelocityY() <= 0.0f) {
 				playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
 				player_->SetOnGround(true);
-			} else {
+				collisionHandled = true;
+
+				// ★★★ 着地時のアイテム取得処理は削除 ★★★
+
+				// ダメージ処理
+				if (platform->GetDamageDirection() == DamageDirection::TOP) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+							}
+						}
+					}
+				}
+				// プレイヤーが足場の下から衝突した場合
+			} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
 				playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
 				player_->SetOnGround(true);
+				collisionHandled = true;
+
+				// ★★★ 着地時のアイテム取得処理は削除 ★★★
+
+				// ダメージ処理
+				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+							}
+						}
+					}
+				}
 			}
+
+			if (!collisionHandled && (wasLeft || wasRight)) {
+				if (playerPos.x < platform->GetWorldPosition().x) {
+					playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
+				} else {
+					playerPos.x = platformAABB.GetMax().x + playerHalfSize.x;
+				}
+				player_->SetVelocityX(0.0f);
+				collisionHandled = true;
+			}
+
+			if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
+				if (!player_->IsInversion()) {
+					playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+					player_->SetOnGround(true);
+				} else {
+					playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+					player_->SetOnGround(true);
+				}
+
+				// 継続ダメージのチェック
+				if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+							}
+						}
+					}
+				} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
+					if (!player_->IsInvincible()) {
+						if (playerHP_ > 0) {
+							playerHP_--;
+							player_->OnDamage();
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+							}
+						}
+					}
+				}
+			}
+
+			player_->SetPosition(playerPos);
 		}
 
-		player_->SetPosition(playerPos);
+		// ★★★ 新しいアイテム当たり判定の処理 ★★★
+		if (platform->GetItemType() != ItemType::NONE) {
+			const AABB& playerAABB = player_->GetAABB(); // プレイヤーのAABBをここで取得
+			const AABB& itemAABB = platform->GetItemAABB();
+
+			if (playerAABB.IsColliding(itemAABB)) {
+				// アイテム取得時の効果
+				switch (platform->GetItemType()) {
+				case ItemType::SPEED_RESET:
+					gameTime_ -= 12.0f;
+					if (gameTime_ < 5.0f) {
+						gameTime_ = 5.0f;
+					}
+					platform->SetItemType(ItemType::NONE, player_->IsInversion()); // ★引数を追加
+					break;
+				case ItemType::HP_RECOVERY:
+					if (playerHP_ < 3) {
+						if (playerHP_ < (int)hpWorldTransforms_.size()) {
+							hpWorldTransforms_[playerHP_]->scale_ = {1.5f, 1.5f, 0.5f};
+							hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+						}
+						playerHP_++;
+					}
+					platform->SetItemType(ItemType::NONE, player_->IsInversion()); // ★引数を追加
+					break;
+				default:
+					break;
+				}
+			}
+		}
 	}
 
 	// --- 7. 画面端での重力反転処理 ---

@@ -53,6 +53,8 @@ public:
 	/// </summary>
 	void UpdateMatarix();
 	/// <summary>
+	Vector3 GetWorldPosition() const;
+	/// 
 	/// <returns>定数バッファ</returns>
 	const Microsoft::WRL::ComPtr<ID3D12Resource>& GetConstBuffer() const { return constBuffer_; }
 
