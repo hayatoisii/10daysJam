@@ -55,6 +55,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
+	Audio::GetInstance()->Initialize();
+	// "BGM.wav"を読み込み、サウンドデータハンドルとして保持
+	uint32_t bgmSoundHandle = Audio::GetInstance()->LoadWave("audio/BGM.wav");
+	// 再生中のBGMを識別するためのボイスハンドル（最初は0で初期化）
+	uint32_t bgmVoiceHandle = 0;
+
 	// main関数の前に
 	TitleScnce* titleScnce = nullptr;
 	SelectScene* selectScene = nullptr;
@@ -106,8 +112,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			selectScene->Draw();
 			if (selectScene->IsGameStart()) {
 				scene = Scene::Game;
-				// ゲームシーンを再初期化して、新しいゲームを開始
 				gameScnce->Initialize();
+				// ▼▼▼ ゲームシーン開始時にBGMの再生を開始します（trueでループ再生）▼▼▼
+				bgmVoiceHandle = Audio::GetInstance()->PlayWave(bgmSoundHandle, true);
 			}
 			break;
 
@@ -115,24 +122,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			gameScnce->Update();
 			gameScnce->Draw();
 			if (gameScnce->IsGameOver()) {
-				// ▼▼▼ ここの処理を修正 ▼▼▼
-				int finalScore = gameScnce->GetScore(); // 今回のスコアを取得
-				// ベストスコアを更新していたら保存
+				// ▼▼▼ ゲームオーバー時にBGMを停止します ▼▼▼
+				Audio::GetInstance()->StopWave(bgmVoiceHandle);
+
+				int finalScore = gameScnce->GetScore();
 				if (finalScore > bestScore) {
 					bestScore = finalScore;
 					SaveBestScore(bestScore);
 				}
-				// 今回のスコアとベストスコアの両方を渡して初期化
 				gameOverScene->Initialize(finalScore, bestScore);
 				scene = Scene::GameOver;
-			}
-			else if (gameScnce->IsGameClear()) {
+			} else if (gameScnce->IsGameClear()) {
+				// ▼▼▼ ゲームクリア時もBGMを停止させます ▼▼▼
+				Audio::GetInstance()->StopWave(bgmVoiceHandle);
 				scene = Scene::GameClear;
-			}
-			// ポーズキー（例: Escape）が押されたらポーズメニューへ
-			// 注: InputクラスのTriggerKeyメソッドを使用
-			else if (KamataEngine::Input::GetInstance()->TriggerKey(DIK_ESCAPE)) {
-				scene = Scene::Pause;
 			}
 			break;
 
@@ -192,6 +195,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	// ここでゲームシーンの終了処理を行う
 
+	Audio::GetInstance()->Finalize();
 	// 終了処理
 	KamataEngine::Finalize();
 	return 0;
