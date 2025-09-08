@@ -40,6 +40,7 @@ void GameScene::Initialize() {
 	playerHP_ = 3;
 	score_ = 0;
 	gameTime_ = 0.0f;
+	gameOverTimer_ = 0.0f; // ゲームオーバータイマーをリセット
 
 	// 乱数エンジンの初期化
 	std::random_device rd;
@@ -160,7 +161,10 @@ void GameScene::Initialize() {
 	worldTransform.Initialize();
 	font_ = new BIt_Map_Font();
 	font_->Initialize();
+
 }
+
+// GameScene.cpp
 
 void GameScene::Update() {
 	// --- 1. 時間経過と全体スピードの更新 ---
@@ -170,364 +174,357 @@ void GameScene::Update() {
 		speedMultiplier_ = 200.0f;
 	}
 
-	// --- 2. 足場の生成 ---
-	platformSpawnTimer += 1.0f / 60.0f;
-	if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
-		platformSpawnTimer = 0.0f;
-		float x;
-		if (platformSideFlag) {
-			std::uniform_real_distribution<float> posX(-17.0f, 0.0f);
-			x = posX(randomEngine_);
-		} else {
-			std::uniform_real_distribution<float> posX(0.0f, 17.0f);
-			x = posX(randomEngine_);
-		}
-		platformSideFlag = !platformSideFlag;
-		Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
-		Vector3 scale = {1.3f, 1.0f, 1.0f};
-		Platform* platform = new Platform();
-		std::uniform_int_distribution<int> dist10(0, 9);
-		if (dist10(randomEngine_) < 6) {
-			scale = {1.3f, 1.5f, 1.0f};
-			DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
-			platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
-			platform->SetDamageColliderScaleY(1.2f);
-			platform->SetSafeSideScaleY(0.8f);
-		} else {
-			platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
+	float scrollSpeed = 0.0f;
 
-			// アイテムを確率で設置する処理
-			std::uniform_int_distribution<int> itemDist(0, 99);
-			int itemRoll = itemDist(randomEngine_);
+	if (!player_->IsDead()) {
 
-			// 5%の確率でHP回復アイテムを生成
-			if (itemRoll < 5) {
-				platform->SetItemType(ItemType::HP_RECOVERY, player_->IsInversion());
+		// --- 2. 足場の生成 ---
+		platformSpawnTimer += 1.0f / 60.0f;
+		if (platformSpawnTimer >= (platformSpawnInterval / speedMultiplier_) * spawnRateModifier) {
+			platformSpawnTimer = 0.0f;
+			float x;
+			if (platformSideFlag) {
+				std::uniform_real_distribution<float> posX(-17.0f, 0.0f);
+				x = posX(randomEngine_);
+			} else {
+				std::uniform_real_distribution<float> posX(0.0f, 17.0f);
+				x = posX(randomEngine_);
 			}
-			// 次の5%の確率でスピードリセットアイテムを生成
-			else if (itemRoll < 10) {
-				platform->SetItemType(ItemType::SPEED_RESET, player_->IsInversion());
-			}
-		}
-		platforms_.push_back(platform);
-		lastPlatformX = x;
-	}
+			platformSideFlag = !platformSideFlag;
+			Vector3 pos = {x, player_->IsInversion() ? 21.0f : -21.0f, 0.0f};
+			Vector3 scale = {1.3f, 1.0f, 1.0f};
+			Platform* platform = new Platform();
+			std::uniform_int_distribution<int> dist10(0, 9);
+			if (dist10(randomEngine_) < 6) {
+				scale = {1.3f, 1.5f, 1.0f};
+				DamageDirection dir = player_->IsInversion() ? DamageDirection::BOTTOM : DamageDirection::TOP;
+				platform->Initialize(pos, scale, dir, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
+				platform->SetDamageColliderScaleY(1.2f);
+				platform->SetSafeSideScaleY(0.8f);
+			} else {
+				platform->Initialize(pos, scale, DamageDirection::NONE, modelPlatform_, modelDamageTop_, modelDamageBottom_, modelPlatformItemSpeedReset_, modelItemHpRecovery_, &camera_);
 
-	// --- 3. 全ての足場をスクロールさせる ---
-	float gravity = player_->GetGravity();
-	float baseScrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
-	float scrollSpeed = baseScrollSpeed * speedMultiplier_;
-	for (auto platform : platforms_) {
-		platform->SetScrollSpeed(scrollSpeed);
-		platform->Update();
+				std::uniform_int_distribution<int> itemDist(0, 99);
+				int itemRoll = itemDist(randomEngine_);
+
+				if (itemRoll < 5) {
+					platform->SetItemType(ItemType::HP_RECOVERY, player_->IsInversion());
+				} else if (itemRoll < 10) {
+					platform->SetItemType(ItemType::SPEED_RESET, player_->IsInversion());
+				}
+			}
+			platforms_.push_back(platform);
+			lastPlatformX = x;
+		}
+
+		// --- 3. 全ての足場をスクロールさせる ---
+		float gravity = player_->GetGravity();
+		float baseScrollSpeed = (gravity > 0.0f) ? -0.1f : 0.1f;
+		scrollSpeed = baseScrollSpeed * speedMultiplier_;
+		for (auto platform : platforms_) {
+			platform->SetScrollSpeed(scrollSpeed);
+			platform->Update();
+		}
 	}
 
 	// --- 4. プレイヤーの入力処理 ---
 	player_->Update();
 
-	// ▼▼▼ ジャンプ音の再生処理を追加 ▼▼▼
-	if (player_->DidJustJump()) {
-		Audio::GetInstance()->PlayWave(sfxJumpHandle_);
-	}
+	if (!player_->IsDead()) {
 
-	// --- 5. プレイヤーの物理演算と移動 ---
-	player_->InterpolateGravity();
-	float velocityX = player_->GetVelocityX();
-	float velocityY = player_->GetVelocityY();
-	Vector3 playerPos = player_->GetPosition();
-	if (!player_->IsOnGround()) {
-		velocityY += player_->GetGravity();
-	}
-	if (!player_->IsInversion()) {
-		if (velocityY < -player_->GetMaxFallSpeed()) {
-			velocityY = -player_->GetMaxFallSpeed();
+		// ▼▼▼ ジャンプ音の再生処理を追加 ▼▼▼
+		if (player_->DidJustJump()) {
+			Audio::GetInstance()->PlayWave(sfxJumpHandle_);
 		}
-	} else {
-		if (velocityY > player_->GetMaxFallSpeed()) {
-			velocityY = player_->GetMaxFallSpeed();
+
+		// --- 5. プレイヤーの物理演算と移動 ---
+		player_->InterpolateGravity();
+		float velocityX = player_->GetVelocityX();
+		float velocityY = player_->GetVelocityY();
+		Vector3 playerPos = player_->GetPosition();
+		if (!player_->IsOnGround()) {
+			velocityY += player_->GetGravity();
 		}
-	}
-	player_->SetVelocityY(velocityY);
-	playerPos.x += velocityX;
-	playerPos.y += velocityY;
-	player_->SetPosition(playerPos);
-
-	// X軸の移動範囲制限を適用する
-	playerPos = player_->GetPosition();
-	if (playerPos.x < player_->GetMinX()) {
-		playerPos.x = player_->GetMinX();
-	}
-	if (playerPos.x > player_->GetMaxX()) {
-		playerPos.x = player_->GetMaxX();
-	}
-	player_->SetPosition(playerPos);
-
-	// --- 6. 当たり判定 ---
-	player_->SetOnGround(false);
-
-	for (auto platform : platforms_) {
-		const AABB& platformAABB = platform->GetAABB();
-
-		Vector3 prevPlayerPos = player_->GetPrevPosition();
-		Vector3 playerHalfSize = player_->GetHalfSize();
-		AABB broadPhaseAABB;
-		Vector3 minPoint = {fminf(playerPos.x, prevPlayerPos.x) - playerHalfSize.x, fminf(playerPos.y, prevPlayerPos.y) - playerHalfSize.y, 0.0f};
-		Vector3 maxPoint = {fmaxf(playerPos.x, prevPlayerPos.x) + playerHalfSize.x, fmaxf(playerPos.y, prevPlayerPos.y) + playerHalfSize.y, 0.0f};
-		broadPhaseAABB.Set(minPoint, maxPoint);
-
-		if (!broadPhaseAABB.IsColliding(platformAABB)) {
-			// ★★★ アイテムだけの当たり判定のために、continueの位置を変更 ★★★
-			// continue;
+		if (!player_->IsInversion()) {
+			if (velocityY < -player_->GetMaxFallSpeed()) {
+				velocityY = -player_->GetMaxFallSpeed();
+			}
 		} else {
-			// ★★★ continue しなかった場合（足場と接触可能性がある場合）のみ、以下の判定を行う ★★★
-			const AABB& playerAABB = player_->GetAABB();
-			AABB prevPlayerAABB;
-			prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
-
-			float epsilon = 0.01f;
-			bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
-			bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
-			bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
-			bool wasRight = prevPlayerAABB.GetMin().x >= platformAABB.GetMax().x - epsilon;
-
-			playerPos = player_->GetPosition();
-			bool collisionHandled = false;
-
-			// プレイヤーが足場の上から衝突した場合
-			if (wasAbove && player_->GetVelocityY() <= 0.0f) {
-				playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
-				player_->SetOnGround(true);
-				collisionHandled = true;
-
-				// ★★★ 着地時のアイテム取得処理は削除 ★★★
-
-				// ダメージ処理
-				if (platform->GetDamageDirection() == DamageDirection::TOP) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-
-							Audio::GetInstance()->PlayWave(sfxDamageHandle_); // ★ダメージ音を再生
-
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix();
-							}
-						}
-					}
-				}
-				// プレイヤーが足場の下から衝突した場合
-			} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
-				playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
-				player_->SetOnGround(true);
-				collisionHandled = true;
-
-				// ★★★ 着地時のアイテム取得処理は削除 ★★★
-
-				// ダメージ処理
-				if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
-							}
-						}
-					}
-				}
+			if (velocityY > player_->GetMaxFallSpeed()) {
+				velocityY = player_->GetMaxFallSpeed();
 			}
+		}
+		player_->SetVelocityY(velocityY);
+		playerPos.x += velocityX;
+		playerPos.y += velocityY;
+		player_->SetPosition(playerPos);
 
-			if (!collisionHandled && (wasLeft || wasRight)) {
-				if (playerPos.x < platform->GetWorldPosition().x) {
-					playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
-				} else {
-					playerPos.x = platformAABB.GetMax().x + playerHalfSize.x;
-				}
-				player_->SetVelocityX(0.0f);
-				collisionHandled = true;
-			}
+		playerPos = player_->GetPosition();
+		if (playerPos.x < player_->GetMinX()) {
+			playerPos.x = player_->GetMinX();
+		}
+		if (playerPos.x > player_->GetMaxX()) {
+			playerPos.x = player_->GetMaxX();
+		}
+		player_->SetPosition(playerPos);
 
-			if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
-				if (!player_->IsInversion()) {
+		// --- 6. 当たり判定 ---
+		player_->SetOnGround(false);
+
+		for (auto platform : platforms_) {
+			const AABB& platformAABB = platform->GetAABB();
+
+			Vector3 prevPlayerPos = player_->GetPrevPosition();
+			Vector3 playerHalfSize = player_->GetHalfSize();
+			AABB broadPhaseAABB;
+			Vector3 minPoint = {fminf(playerPos.x, prevPlayerPos.x) - playerHalfSize.x, fminf(playerPos.y, prevPlayerPos.y) - playerHalfSize.y, 0.0f};
+			Vector3 maxPoint = {fmaxf(playerPos.x, prevPlayerPos.x) + playerHalfSize.x, fmaxf(playerPos.y, prevPlayerPos.y) + playerHalfSize.y, 0.0f};
+			broadPhaseAABB.Set(minPoint, maxPoint);
+
+			if (!broadPhaseAABB.IsColliding(platformAABB)) {
+			} else {
+				const AABB& playerAABB = player_->GetAABB();
+				AABB prevPlayerAABB;
+				prevPlayerAABB.Set(prevPlayerPos - playerHalfSize, prevPlayerPos + playerHalfSize);
+
+				float epsilon = 0.01f;
+				bool wasAbove = prevPlayerAABB.GetMin().y >= platformAABB.GetMax().y - epsilon;
+				bool wasBelow = prevPlayerAABB.GetMax().y <= platformAABB.GetMin().y + epsilon;
+				bool wasLeft = prevPlayerAABB.GetMax().x <= platformAABB.GetMin().x + epsilon;
+				bool wasRight = prevPlayerAABB.GetMin().x >= platformAABB.GetMax().x - epsilon;
+
+				playerPos = player_->GetPosition();
+				bool collisionHandled = false;
+
+				if (wasAbove && player_->GetVelocityY() <= 0.0f) {
 					playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
 					player_->SetOnGround(true);
-				} else {
+					collisionHandled = true;
+
+					if (platform->GetDamageDirection() == DamageDirection::TOP) {
+						if (!player_->IsInvincible()) {
+							if (playerHP_ > 0) {
+								playerHP_--;
+								player_->OnDamage();
+								Audio::GetInstance()->PlayWave(sfxDamageHandle_);
+								if (playerHP_ < (int)hpWorldTransforms_.size()) {
+									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+								}
+							}
+						}
+					}
+				} else if (wasBelow && player_->GetVelocityY() >= 0.0f) {
 					playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
 					player_->SetOnGround(true);
-				}
+					collisionHandled = true;
 
-				// 継続ダメージのチェック
-				if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
-							}
-						}
-					}
-				} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
-					if (!player_->IsInvincible()) {
-						if (playerHP_ > 0) {
-							playerHP_--;
-							player_->OnDamage();
-							if (playerHP_ < (int)hpWorldTransforms_.size()) {
-								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+					if (platform->GetDamageDirection() == DamageDirection::BOTTOM) {
+						if (!player_->IsInvincible()) {
+							if (playerHP_ > 0) {
+								playerHP_--;
+								player_->OnDamage();
+								if (playerHP_ < (int)hpWorldTransforms_.size()) {
+									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+								}
 							}
 						}
 					}
 				}
+
+				if (!collisionHandled && (wasLeft || wasRight)) {
+					if (playerPos.x < platform->GetWorldPosition().x) {
+						playerPos.x = platformAABB.GetMin().x - playerHalfSize.x;
+					} else {
+						playerPos.x = platformAABB.GetMax().x + playerHalfSize.x;
+					}
+					player_->SetVelocityX(0.0f);
+					collisionHandled = true;
+				}
+
+				if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
+					if (!player_->IsInversion()) {
+						playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+						player_->SetOnGround(true);
+					} else {
+						playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+						player_->SetOnGround(true);
+					}
+
+					if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
+						if (!player_->IsInvincible()) {
+							if (playerHP_ > 0) {
+								playerHP_--;
+								player_->OnDamage();
+								if (playerHP_ < (int)hpWorldTransforms_.size()) {
+									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+								}
+							}
+						}
+					} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
+						if (!player_->IsInvincible()) {
+							if (playerHP_ > 0) {
+								playerHP_--;
+								player_->OnDamage();
+								if (playerHP_ < (int)hpWorldTransforms_.size()) {
+									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+								}
+							}
+						}
+					}
+				}
+
+				player_->SetPosition(playerPos);
 			}
 
-			player_->SetPosition(playerPos);
-		}
+			if (platform->GetItemType() != ItemType::NONE) {
+				const AABB& playerAABB = player_->GetAABB();
+				const AABB& itemAABB = platform->GetItemAABB();
 
-
-		// ★★★ 新しいアイテム当たり判定の処理 ★★★
-		if (platform->GetItemType() != ItemType::NONE) {
-			const AABB& playerAABB = player_->GetAABB();
-			const AABB& itemAABB = platform->GetItemAABB();
-
-			if (playerAABB.IsColliding(itemAABB)) {
-				// アイテム取得時の効果
-				switch (platform->GetItemType()) {
-				case ItemType::SPEED_RESET:
-					Audio::GetInstance()->PlayWave(sfxClockHandle_); // ▼▼▼ 時計の効果音を再生 ▼▼▼
-					gameTime_ -= 12.0f;
-					if (gameTime_ < 5.0f) {
-						gameTime_ = 5.0f;
-					}
-					platform->SetItemType(ItemType::NONE, player_->IsInversion());
-					break;
-				case ItemType::HP_RECOVERY:
-					if (playerHP_ < 3) {
-						Audio::GetInstance()->PlayWave(sfxHealHandle_); // ▼▼▼ 回復の効果音を再生 ▼▼▼
-
-						if (playerHP_ < (int)hpWorldTransforms_.size()) {
-							hpWorldTransforms_[playerHP_]->scale_ = {1.5f, 1.5f, 0.5f};
-							hpWorldTransforms_[playerHP_]->UpdateMatarix();
+				if (playerAABB.IsColliding(itemAABB)) {
+					switch (platform->GetItemType()) {
+					case ItemType::SPEED_RESET:
+						Audio::GetInstance()->PlayWave(sfxClockHandle_);
+						gameTime_ -= 12.0f;
+						if (gameTime_ < 5.0f) {
+							gameTime_ = 5.0f;
 						}
-						playerHP_++;
+						platform->SetItemType(ItemType::NONE, player_->IsInversion());
+						break;
+					case ItemType::HP_RECOVERY:
+						if (playerHP_ < 3) {
+							Audio::GetInstance()->PlayWave(sfxHealHandle_);
+							if (playerHP_ < (int)hpWorldTransforms_.size()) {
+								hpWorldTransforms_[playerHP_]->scale_ = {1.5f, 1.5f, 0.5f};
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
+							}
+							playerHP_++;
+						}
+						platform->SetItemType(ItemType::NONE, player_->IsInversion());
+						break;
+					default:
+						break;
 					}
-					platform->SetItemType(ItemType::NONE, player_->IsInversion());
-					break;
-				default:
-					break;
 				}
 			}
 		}
-	}
 
-	// --- 7. 画面端での重力反転処理 ---
-	playerPos = player_->GetPosition();
-	if (!player_->IsInversion()) {
-		if (playerPos.y <= -16.7f) {
-			playerPos.y = -16.7f;
-			player_->SetPosition(playerPos);
-			player_->TriggerGravityReversal();
-		}
-	} else {
-		if (playerPos.y >= 16.7f) {
-			playerPos.y = 16.7f;
-			player_->SetPosition(playerPos);
-			player_->TriggerGravityReversal();
-		}
-	}
-
-	// --- 8. 背景の更新 ---
-	if (skySprite1_ && skySprite2_) {
-		const float spriteSpeedModifier = 17.0f;
-		float spriteScrollSpeed = -scrollSpeed * spriteSpeedModifier;
-		Vector2 skyPos1 = skySprite1_->GetPosition();
-		skyPos1.y += spriteScrollSpeed;
-		skySprite1_->SetPosition(skyPos1);
-		Vector2 skyPos2 = skySprite2_->GetPosition();
-		skyPos2.y += spriteScrollSpeed;
-		skySprite2_->SetPosition(skyPos2);
-		float windowHeight = (float)WinApp::kWindowHeight;
-		if (spriteScrollSpeed > 0) {
-			if (skyPos1.y > windowHeight + windowHeight / 2.0f) {
-				skySprite1_->SetPosition({skyPos1.x, skyPos2.y - windowHeight});
-			}
-			if (skyPos2.y > windowHeight + windowHeight / 2.0f) {
-				skySprite2_->SetPosition({skyPos2.x, skyPos1.y - windowHeight});
+		// --- 7. 画面端での重力反転処理 ---
+		playerPos = player_->GetPosition();
+		if (!player_->IsInversion()) {
+			if (playerPos.y <= -16.7f) {
+				playerPos.y = -16.7f;
+				player_->SetPosition(playerPos);
+				player_->TriggerGravityReversal();
 			}
 		} else {
-			if (skyPos1.y < -windowHeight / 2.0f) {
-				skySprite1_->SetPosition({skyPos1.x, skyPos2.y + windowHeight});
-			}
-			if (skyPos2.y < -windowHeight / 2.0f) {
-				skySprite2_->SetPosition({skyPos2.x, skyPos1.y + windowHeight});
+			if (playerPos.y >= 16.7f) {
+				playerPos.y = 16.7f;
+				player_->SetPosition(playerPos);
+				player_->TriggerGravityReversal();
 			}
 		}
-	}
 
-	// --- 9. 画面外の足場を削除 ---
-	for (auto it = platforms_.begin(); it != platforms_.end();) {
-		Vector3 pos = (*it)->GetWorldPosition();
-		bool erased = false;
-		if (player_->IsInversion()) {
-			if (pos.y < -22.0f) {
-				delete *it;
-				it = platforms_.erase(it);
-				erased = true;
-			}
-		} else {
-			if (pos.y > 22.0f) {
-				delete *it;
-				it = platforms_.erase(it);
-				erased = true;
+		// --- 8. 背景の更新 ---
+		if (skySprite1_ && skySprite2_) {
+			const float spriteSpeedModifier = 17.0f;
+			float spriteScrollSpeed = -scrollSpeed * spriteSpeedModifier;
+			Vector2 skyPos1 = skySprite1_->GetPosition();
+			skyPos1.y += spriteScrollSpeed;
+			skySprite1_->SetPosition(skyPos1);
+			Vector2 skyPos2 = skySprite2_->GetPosition();
+			skyPos2.y += spriteScrollSpeed;
+			skySprite2_->SetPosition(skyPos2);
+			float windowHeight = (float)WinApp::kWindowHeight;
+			if (spriteScrollSpeed > 0) {
+				if (skyPos1.y > windowHeight + windowHeight / 2.0f) {
+					skySprite1_->SetPosition({skyPos1.x, skyPos2.y - windowHeight});
+				}
+				if (skyPos2.y > windowHeight + windowHeight / 2.0f) {
+					skySprite2_->SetPosition({skyPos2.x, skyPos1.y - windowHeight});
+				}
+			} else {
+				if (skyPos1.y < -windowHeight / 2.0f) {
+					skySprite1_->SetPosition({skyPos1.x, skyPos2.y + windowHeight});
+				}
+				if (skyPos2.y < -windowHeight / 2.0f) {
+					skySprite2_->SetPosition({skyPos2.x, skyPos1.y + windowHeight});
+				}
 			}
 		}
-		if (!erased) {
-			++it;
-		}
-	}
 
-	// --- 10. プレイヤーの行列を最終更新 ---
+		// --- 9. 画面外の足場を削除 ---
+		for (auto it = platforms_.begin(); it != platforms_.end();) {
+			Vector3 pos = (*it)->GetWorldPosition();
+			bool erased = false;
+			if (player_->IsInversion()) {
+				if (pos.y < -22.0f) {
+					delete *it;
+					it = platforms_.erase(it);
+					erased = true;
+				}
+			} else {
+				if (pos.y > 22.0f) {
+					delete *it;
+					it = platforms_.erase(it);
+					erased = true;
+				}
+			}
+			if (!erased) {
+				++it;
+			}
+		}
+
+		// --- 11. スコア加算 ---
+		Vector3 currentPlayerPos = player_->GetPosition();
+		bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
+		if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
+			score_++;
+		}
+		prevPlayerPos_ = currentPlayerPos;
+		prevOnGround_ = player_->IsOnGround();
+		if (score_ != prevScore_) {
+			font_->Set(score_);
+			prevScore_ = score_;
+		}
+
+		// ▼▼▼ HP警告音の管理 ▼▼▼
+		if (playerHP_ == 1 && !isWarningPlaying_) {
+			warningVoiceHandle_ = Audio::GetInstance()->PlayWave(sfxWarningHandle_, true);
+			isWarningPlaying_ = true;
+		} else if (isWarningPlaying_ && playerHP_ != 1) {
+			Audio::GetInstance()->StopWave(warningVoiceHandle_);
+			isWarningPlaying_ = false;
+			warningVoiceHandle_ = 0;
+		}
+
+	} // ★★★ ここが if (!player_->IsDead()) の本当の終わりです ★★★
+
+	// ★★★ player_->UpdateWorldMatrix(); をここへ移動します ★★★
+	// これにより、死亡中も行列が更新され、スケールや回転が正しく描画に反映されます。
 	player_->UpdateWorldMatrix();
 
-	// --- 11. スコア加算 ---
-	Vector3 currentPlayerPos = player_->GetPosition();
-	bool isFallingOrJumping = (player_->GetVelocityY() != 0.0f) && !player_->IsOnGround();
-	if (isFallingOrJumping && (currentPlayerPos.y != prevPlayerPos_.y)) {
-		score_++;
-	}
-	prevPlayerPos_ = currentPlayerPos;
-	prevOnGround_ = player_->IsOnGround();
-	if (score_ != prevScore_) {
-		font_->Set(score_);
-		prevScore_ = score_;
-	}
-
-	// ▼▼▼ HP警告音の管理 ▼▼▼
-	// HPが1で、まだ警告音が鳴っていない場合
-	if (playerHP_ == 1 && !isWarningPlaying_) {
-		// ループ再生を開始し、再生ハンドルとフラグを記録
-		warningVoiceHandle_ = Audio::GetInstance()->PlayWave(sfxWarningHandle_, true);
-		isWarningPlaying_ = true;
-	}
-	// 警告音が鳴っていて、HPが1ではなくなった場合（回復した or ゲームオーバーになった）
-	else if (isWarningPlaying_ && playerHP_ != 1) {
-		// 再生を停止し、ハンドルとフラグをリセット
-		Audio::GetInstance()->StopWave(warningVoiceHandle_);
-		isWarningPlaying_ = false;
-		warningVoiceHandle_ = 0;
-	}
-
 	// --- 12. ゲームオーバー判定 ---
-	if (playerHP_ <= 0) {
+	if (playerHP_ <= 0 && !player_->IsDead()) {
+		player_->OnDeath();
+	}
+
+	if (player_->IsDead()) {
+		gameOverTimer_ += 1.0f / 60.0f;
+	}
+
+	if (gameOverTimer_ >= kGameOverDelay_) {
 		isGameOver_ = true;
 	}
-	playerPos = player_->GetPosition();
-	if (playerPos.y > 23.0f || playerPos.y < -23.0f) {
-		isGameOver_ = true;
+
+	if (!player_->IsDead()) {
+		Vector3 playerPos = player_->GetPosition();
+		if (playerPos.y > 23.0f || playerPos.y < -23.0f) {
+			isGameOver_ = true;
+		}
 	}
 }
 

@@ -13,6 +13,10 @@ void Player::Initialize(Model* model, Camera* camera, const Vector3& pos) {
 	// damageTransform_.Initialize(); を削除
 	worldTransform_.Initialize();
 
+	isDead_ = false;
+	deathRotation_ = 0.0f;
+	deathAnimationTimer_ = 0.0f; // ▼▼▼ タイマーをリセット ▼▼▼
+
 	// 初期AABB
 	aabb_.Set(pos - halfSize_, pos + halfSize_);
 }
@@ -25,6 +29,11 @@ void Player::UpdateWorldMatrix() {
 void Player::Update() {
 	// この関数は、キー入力やコントローラー入力を速度に変換する「だけ」の役割になります。
 	// 物理計算（重力など）や、自身の状態（onGround_）の変更は行いません。
+	// ▼▼▼ Update関数の先頭に、死亡状態なら専用処理を呼んで終了するロジックを追加 ▼▼▼
+	if (isDead_) {
+		UpdateDeathAnimation();
+		return; // 通常の更新処理は行わない
+	}
 
 	// 前フレームの位置を保存
 	prevPosition_ = worldTransform_.translation_;
@@ -156,3 +165,47 @@ void Player::InterpolateGravity() {
 
 // IsDamageをGetDamageDirectionに変更
 DamageDirection Platform::GetDamageDirection() const { return damageDirection_; }
+
+
+void Player::OnDeath() {
+	if (isDead_) {
+		return;
+	}
+	isDead_ = true;
+	deathAnimationTimer_ = 0.0f;
+
+	// ▼▼▼ この行を追加 ▼▼▼
+	isInvincible_ = false; // 無敵状態を強制的に解除して、点滅を止める
+
+	// 死亡時に少しだけ上に跳ねる演出
+	velocityY_ = inversion ? -0.3f : 0.3f;
+	velocityX_ = 0.0f;
+}
+
+// 死亡モーション中の更新処理
+void Player::UpdateDeathAnimation() {
+	// 1. アニメーションの進行度を計算
+	deathAnimationTimer_ += 1.0f / 60.0f; // 経過時間を加算
+	float progress = deathAnimationTimer_ / kDeathAnimationDuration_;
+
+	// ▼▼▼ ここの数値を 4.0f から 1.0f に修正 ▼▼▼
+	// これにより、アニメーション完了時に進行度がちょうど 1.0 になります
+	if (progress > 1.0f) {
+		progress = 1.0f; // 進行度が1を超えないようにする
+	}
+
+	// 2. スケーリング（だんだん小さくする処理）
+	// イージング関数(progress * progress)を使って、滑らかに縮むように見せる
+	float easedProgress = progress * progress;
+	float currentScale = 1.0f - easedProgress; // 1.0から0.0へスケールが変化
+	worldTransform_.scale_ = {currentScale, currentScale, currentScale};
+
+	// 3. 回転
+	const float kRotationSpeed = 0.3f; // 回転速度
+	deathRotation_ += kRotationSpeed;
+	worldTransform_.rotation_.z = deathRotation_;
+
+	// 4. 落下
+	velocityY_ += GetGravity();
+	worldTransform_.translation_.y += velocityY_;
+}

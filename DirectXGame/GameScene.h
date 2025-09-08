@@ -119,4 +119,8 @@ private:
 	uint32_t sfxWarningHandle_ = 0;
 	uint32_t warningVoiceHandle_ = 0; // 警告音の再生ハンドル
 	bool isWarningPlaying_ = false;   // 警告音が再生中かどうかのフラグ
+
+	// ▼▼▼ ゲームオーバーになるまでの猶予時間を 2.0f から 4.0f に変更 ▼▼▼
+	const float kGameOverDelay_ = 4.0f; // ゲームオーバーになるまでの猶予時間（4秒）
+	float gameOverTimer_ = 0.0f;        // ゲームオーバータイマー
 };

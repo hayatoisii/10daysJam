@@ -56,6 +56,10 @@ public:
 
 	 bool DidJustJump() const { return justJumped_; }
 
+	 void OnDeath(); // ▼▼▼ 追加: 死亡モーションを開始する関数
+	 void UpdateDeathAnimation();
+	 bool IsDead() const { return isDead_; } // ▼▼▼ 追加: 死亡状態か確認する関数
+
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -117,4 +121,10 @@ private:
 
 	bool onGround_ = false; // 地面にいるかどうか
 	bool justJumped_ = false; // ▼▼▼ この行を追加 ▼▼▼
+	bool isDead_ = false;        // 死亡状態フラグ
+	float deathRotation_ = 0.0f; // 死亡時の回転角度
+
+	// ▼▼▼ 死亡アニメーションの時間を 3.0f から 4.0f に変更 ▼▼▼
+	static constexpr float kDeathAnimationDuration_ = 4.0f; // 死亡アニメーションの時間（4秒）
+	float deathAnimationTimer_ = 0.0f;
 };
