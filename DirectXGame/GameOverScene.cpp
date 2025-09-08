@@ -1,35 +1,55 @@
 #include "GameOverScene.h"
 
-GameOverScene::~GameOverScene() { delete gameOverSprite_; }
+GameOverScene::~GameOverScene() {
+	delete gameOverSprite_;
+	delete font_;
+	delete bestScoreFont_;  // ▼▼▼ 追加 ▼▼▼
+	delete bestTextSprite_; // ▼▼▼ 追加 ▼▼▼
+}
 
-void GameOverScene::Initialize() {
+
+void GameOverScene::Initialize(int currentScore, int bestScore) {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
-	// タイトルに戻るフラグを毎回リセット
+	finalScore_ = currentScore;
+	bestScore_ = bestScore; // ベストスコアを保存
 	isReturnToTitle_ = false;
 
-	textureHandle_ = KamataEngine::TextureManager::Load("gameover/3.png"); // 適切なテクスチャに置き換えてください
+	textureHandle_ = KamataEngine::TextureManager::Load("gameover/3.png");
 	gameOverSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
 	gameOverSprite_->SetPosition({0, 0});
+
+	// 「BEST」の文字スプライトを初期化
+	bestTextTextureHandle_ = KamataEngine::TextureManager::Load("M.png"); // ★★★「BEST」と書かれた画像を用意してください
+	bestTextSprite_ = KamataEngine::Sprite::Create(bestTextTextureHandle_, {0.0f, 0.0f});
+
+	// 今回のスコア用フォント
+	font_ = new BIt_Map_Font();
+	font_->Initialize();
+	font_->Set(finalScore_);
+	font_->ShowUnit(false); // mを表示しない
+
+	// ベストスコア用フォント
+	bestScoreFont_ = new BIt_Map_Font();
+	bestScoreFont_->Initialize();
+	bestScoreFont_->Set(bestScore_);
+	bestScoreFont_->ShowUnit(false); // mを表示しない
 }
 
 void GameOverScene::Update() {
-	// ▼▼▼ コントローラー入力の判定を追加 ▼▼▼
 	XINPUT_STATE xInputState = {};
 	XINPUT_STATE xInputStatePrev = {};
 	bool isControllerConnected = input_->GetJoystickState(0, xInputState) && input_->GetJoystickStatePrevious(0, xInputStatePrev);
 
 	bool isConfirmTriggered = false;
 	if (isControllerConnected) {
-		// AボタンまたはSTARTボタンが押された瞬間
 		if (((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_A) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_A)) ||
 		    ((xInputState.Gamepad.wButtons & XINPUT_GAMEPAD_START) && !(xInputStatePrev.Gamepad.wButtons & XINPUT_GAMEPAD_START))) {
 			isConfirmTriggered = true;
 		}
 	}
 
-	// Enterキーまたはコントローラーの決定ボタンでタイトルへ戻る
 	if (input_->TriggerKey(DIK_RETURN) || isConfirmTriggered) {
 		isReturnToTitle_ = true;
 	}
@@ -39,10 +59,29 @@ void GameOverScene::Draw() {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
 	KamataEngine::Sprite::PreDraw(commandList);
-
 	if (gameOverSprite_) {
 		gameOverSprite_->Draw();
 	}
-
 	KamataEngine::Sprite::PostDraw();
+
+	// ▼▼▼ 描画処理を全面的に書き換え ▼▼▼
+	// ベストスコアの描画
+	if (bestTextSprite_ && bestScoreFont_) {
+		//// 「BEST」の文字の位置とサイズ
+		//bestTextSprite_->SetPosition({420.0f, 80.0f});
+		//bestTextSprite_->SetSize({120.0f, 50.0f}); // サイズは画像に合わせて調整
+		//bestTextSprite_->Draw();
+
+		// ベストスコアの数字の位置とサイズ
+		bestScoreFont_->SetPosition({600.0f, 70.0f});
+		bestScoreFont_->SetScale(1.5f);
+		bestScoreFont_->Draw();
+	}
+
+	// 今回のスコアの描画
+	if (font_) {
+		font_->SetPosition({480.0f, 170.0f});
+		font_->SetScale(2.0f);
+		font_->Draw();
+	}
 }

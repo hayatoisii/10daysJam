@@ -23,6 +23,7 @@ public:
 	// ▼▼▼ 以下の2行を追加 ▼▼▼
 	bool IsGameOver() const { return isGameOver_; }
 	bool IsGameClear() const { return isGameClear_; }
+	int GetScore() const { return score_; }
 
 private:
 

@@ -17,8 +17,8 @@ BIt_Map_Font::~BIt_Map_Font() {
 void BIt_Map_Font::Initialize() {
 	numberTextureHandle_ = TextureManager::Load("number.png");
 	for (int i = 0; i < kNumDigits; ++i) {
-		// ここのX座標は元のままでOKです
-		numberSprite_[i] = Sprite::Create(numberTextureHandle_, {1064.0f + kFontSize.x * i, 10.0f});
+		// ◆◆◆ Sprite::Createの第2引数（座標）を一旦{0, 0}にします ◆◆◆
+		numberSprite_[i] = Sprite::Create(numberTextureHandle_, {0.0f, 0.0f});
 		numberSprite_[i]->SetSize(kFontSize);
 		numberSprite_[i]->SetTextureRect({0, 0}, kFontSize);
 	}
@@ -43,6 +43,8 @@ void BIt_Map_Font::Initialize() {
 	mSprite_->SetPosition({mPositionX, mPositionY});
 
 	// ▲▲▲ 修正はここまで ▲▲▲
+
+	SetPosition({1064.0f, 10.0f});
 }
 
 void BIt_Map_Font::Set(int value) {
@@ -64,10 +66,38 @@ void BIt_Map_Font::Draw() {
 	}
 
 	// ▼▼▼ Mのスプライト描画処理を追加 ▼▼▼
-	if (mSprite_) {
+	if (mSprite_ && showUnit_) { // showUnit_がtrueの時だけ描画
+		// (元のmSprite_の描画処理はそのまま)
 		mSprite_->Draw();
 	}
 	// ▲▲▲ ここまで追加 ▲▲▲
 
 	Sprite::PostDraw();
 }
+
+void BIt_Map_Font::SetScale(float scale) {
+	scale_ = scale;
+	// スケール変更に合わせて各スプライトのサイズを更新
+	for (int i = 0; i < kNumDigits; ++i) {
+		if (numberSprite_[i]) {
+			numberSprite_[i]->SetSize({kFontSize.x * scale_, kFontSize.y * scale_});
+		}
+	}
+	// サイズが変わると文字同士の間隔も変わるので、位置を再設定する必要がある
+	SetPosition(position_);
+}
+
+void BIt_Map_Font::SetPosition(const KamataEngine::Vector2& position) {
+	position_ = position;
+	// 各桁のスプライトの位置を更新
+	for (int i = 0; i < kNumDigits; ++i) {
+		if (numberSprite_[i]) {
+			// スケールを考慮した文字幅で、各桁の位置を計算
+			float posX = position_.x + (kFontSize.x * scale_ * i);
+			float posY = position_.y;
+			numberSprite_[i]->SetPosition({posX, posY});
+		}
+	}
+}
+
+void BIt_Map_Font::ShowUnit(bool show) { showUnit_ = show; }

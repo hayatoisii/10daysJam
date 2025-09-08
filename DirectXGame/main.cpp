@@ -5,9 +5,38 @@
 #include "PauseMenu.h"
 #include "GameClearScene.h"
 #include "GameOverScene.h"
+#include <fstream> // ▼▼▼ 追加 ▼▼▼
+#include <string>  // ▼▼▼ 追加 ▼▼▼
 #include <Windows.h>
 
 using namespace KamataEngine;
+
+int LoadBestScore() {
+	std::ifstream file("best_score.txt");
+	int score = 0;
+	if (file.is_open()) {
+		std::string line;
+		if (std::getline(file, line)) {
+			try {
+				score = std::stoi(line);
+			} catch (...) {
+				// ファイル内容が不正な場合は0にする
+				score = 0;
+			}
+		}
+		file.close();
+	}
+	return score;
+}
+
+// ベストスコアをファイルへ書き込む関数
+void SaveBestScore(int score) {
+	std::ofstream file("best_score.txt");
+	if (file.is_open()) {
+		file << score;
+		file.close();
+	}
+}
 
 // main.cppの修正
 enum class Scene { Title, Select, Game, GameOver, Pause, GameClear };
@@ -21,6 +50,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	//  // エンジンの初期化
 
 	KamataEngine::Initialize(L"LE3C_26_ムラタ_トモキ");
+
+	int bestScore = LoadBestScore();
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
@@ -44,7 +75,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	gameScnce->Initialize();
 
 	gameOverScene = new GameOverScene();
-	gameOverScene->Initialize();
+	//gameOverScene->Initialize();
 
 	pauseMenu = new PauseMenu();
 	pauseMenu->Initialize();
@@ -83,15 +114,18 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		case Scene::Game:
 			gameScnce->Update();
 			gameScnce->Draw();
-			// プレイヤーのHPが0になったらゲームオーバーシーンへ
-			// 注: GameSceneにIsGameOver()メソッドを実装する必要があります
 			if (gameScnce->IsGameOver()) {
+				// ▼▼▼ ここの処理を修正 ▼▼▼
+				int finalScore = gameScnce->GetScore(); // 今回のスコアを取得
+				// ベストスコアを更新していたら保存
+				if (finalScore > bestScore) {
+					bestScore = finalScore;
+					SaveBestScore(bestScore);
+				}
+				// 今回のスコアとベストスコアの両方を渡して初期化
+				gameOverScene->Initialize(finalScore, bestScore);
 				scene = Scene::GameOver;
-				// 毎回表示できるように再初期化
-				gameOverScene->Initialize();
 			}
-			// ゲームクリアの条件が満たされたらゲームクリアシーンへ
-			// 注: GameSceneにIsGameClear()メソッドを実装する必要があります
 			else if (gameScnce->IsGameClear()) {
 				scene = Scene::GameClear;
 			}
