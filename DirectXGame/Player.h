@@ -54,6 +54,8 @@ public:
 
 	 void UpdateWorldMatrix();
 
+	 bool DidJustJump() const { return justJumped_; }
+
 private:
 	// 足場のスクロール速度
 	float platformScrollSpeed = 0.2f;
@@ -114,4 +116,5 @@ private:
 	Vector3 prevPosition_;
 
 	bool onGround_ = false; // 地面にいるかどうか
+	bool justJumped_ = false; // ▼▼▼ この行を追加 ▼▼▼
 };

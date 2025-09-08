@@ -110,4 +110,13 @@ private:
 	int prevScore_ = 0; // 追加
 	Vector3 prevPlayerPos_; // 前フレームのプレイヤー位置
 	bool prevOnGround_ = false; // 前フレームの地面判定
+
+	// アイテム取得時の効果音ハンドル
+	uint32_t sfxHealHandle_ = 0;
+	uint32_t sfxClockHandle_ = 0;
+	uint32_t sfxJumpHandle_ = 0;
+	uint32_t sfxDamageHandle_ = 0;
+	uint32_t sfxWarningHandle_ = 0;
+	uint32_t warningVoiceHandle_ = 0; // 警告音の再生ハンドル
+	bool isWarningPlaying_ = false;   // 警告音が再生中かどうかのフラグ
 };

@@ -16,6 +16,11 @@ void SelectScene::Initialize() {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
+	// ▼▼▼ 効果音の読み込みを追加 ▼▼▼
+	sfxSelectHandle_ = Audio::GetInstance()->LoadWave("audio/select.wav");
+	sfxConfirmHandle_ = Audio::GetInstance()->LoadWave("audio/confirm.wav");
+
+
 	// タイトルから戻ってきたときの再初期化に備えてフラグをリセット
 	isGameStart_ = false;
 
@@ -84,20 +89,22 @@ void SelectScene::Update() {
 		}
 	}
 
-	// 左矢印キーが押されたら前の画面へ (キーボード または コントローラー)
+	// 左矢印キーが押されたら前の画面へ
 	if (input_->TriggerKey(DIK_LEFT) || isLeftTriggered) {
+		Audio::GetInstance()->PlayWave(sfxSelectHandle_); // ★選択音を再生
 		currentSelectIndex_--;
 		if (currentSelectIndex_ < 0) {
-			currentSelectIndex_ = 2; // 最後の画面にループ
+			currentSelectIndex_ = 2;
 		}
 		StartArrowMovement();
 	}
 
-	// 右矢印キーが押されたら次の画面へ (キーボード または コントローラー)
+	// 右矢印キーが押されたら次の画面へ
 	if (input_->TriggerKey(DIK_RIGHT) || isRightTriggered) {
+		Audio::GetInstance()->PlayWave(sfxSelectHandle_); // ★選択音を再生
 		currentSelectIndex_++;
 		if (currentSelectIndex_ > 2) {
-			currentSelectIndex_ = 0; // 最初の画面にループ
+			currentSelectIndex_ = 0;
 		}
 		StartArrowMovement();
 	}
@@ -113,6 +120,7 @@ void SelectScene::Update() {
 	if (currentSelectIndex_ == 0) {
 		// EnterキーまたはAボタンが押されたらゲーム開始
 		if (input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
+			Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
 			isGameStart_ = true;
 		}
 	}

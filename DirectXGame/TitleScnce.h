@@ -78,6 +78,7 @@ private:
 	uint32_t TitleSEHandle3_ = 0;
 	uint32_t voiceHandle_ = 0;
 	uint32_t voiceHandle2_ = 0;
+	uint32_t sfxConfirmHandle_ = 0;
 
 	float sprite2MoveSpeed = 2.0f; // 移動速度
 	bool isMovingDown = false;     // 下に移動中か否か

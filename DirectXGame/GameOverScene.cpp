@@ -12,6 +12,8 @@ void GameOverScene::Initialize(int currentScore, int bestScore) {
 	dxCommon_ = KamataEngine::DirectXCommon::GetInstance();
 	input_ = KamataEngine::Input::GetInstance();
 
+	sfxConfirmHandle_ = KamataEngine::Audio::GetInstance()->LoadWave("audio/confirm.wav");
+
 	finalScore_ = currentScore;
 	bestScore_ = bestScore; // ベストスコアを保存
 	isReturnToTitle_ = false;
@@ -52,6 +54,7 @@ void GameOverScene::Update() {
 	}
 
 	if (input_->TriggerKey(DIK_RETURN) || isConfirmTriggered) {
+		KamataEngine::Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
 		isReturnToTitle_ = true;
 	}
 }

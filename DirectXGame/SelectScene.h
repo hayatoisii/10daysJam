@@ -75,4 +75,7 @@ private:
 	// 矢印の浮遊アニメーション用
 	float arrowVerticalOffset_ = 0.0f; // 垂直方向のオフセット
 	float animationTimer_ = 0.0f;      // アニメーションタイマー
+
+	uint32_t sfxSelectHandle_ = 0;  // 選択音
+	uint32_t sfxConfirmHandle_ = 0; // 決定音
 };

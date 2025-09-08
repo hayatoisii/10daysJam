@@ -60,20 +60,33 @@ void GameScene::Initialize() {
 	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
 	transformBackground_.UpdateMatarix(); // ★タイポ修正
 
+	// ▼▼▼ 以下を追加 ▼▼▼
+	isWarningPlaying_ = false; // 警告音フラグをリセット
+	warningVoiceHandle_ = 0;   // 警告音ハンドルをリセット
+
+	// 効果音の読み込み
+	sfxHealHandle_ = Audio::GetInstance()->LoadWave("audio/heal.wav");
+	sfxClockHandle_ = Audio::GetInstance()->LoadWave("audio/clock.wav");
+	// ▼▼▼ 以下を追加 ▼▼▼
+	sfxJumpHandle_ = Audio::GetInstance()->LoadWave("audio/jump.wav");
+	sfxDamageHandle_ = Audio::GetInstance()->LoadWave("audio/damage.wav");
+	sfxWarningHandle_ = Audio::GetInstance()->LoadWave("audio/warning.wav");
+
+
 	// 背景スプライトの初期化
 	skyTextureHandle_ = TextureManager::Load("sky.png");
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
-
-	float windowWidth = (float)WinApp::kWindowWidth;
-	float windowHeight = (float)WinApp::kWindowHeight;
+	
+	float windowWidth = 640;
+	float windowHeight = 720;
 
 	skySprite1_->SetSize({windowWidth, windowHeight});
 	skySprite2_->SetSize({windowWidth, windowHeight});
 	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
 	skySprite2_->SetAnchorPoint({0.5f, 0.5f});
-	skySprite1_->SetPosition({windowWidth / 2.0f, windowHeight / 2.0f});
-	skySprite2_->SetPosition({windowWidth / 2.0f, windowHeight / 2.0f - windowHeight});
+	skySprite1_->SetPosition({windowWidth, windowHeight});
+	skySprite2_->SetPosition({windowWidth, windowHeight - windowHeight});
 
 	// HPのUI初期化
 	for (int i = 0; i < playerHP_; i++) {
@@ -212,6 +225,11 @@ void GameScene::Update() {
 	// --- 4. プレイヤーの入力処理 ---
 	player_->Update();
 
+	// ▼▼▼ ジャンプ音の再生処理を追加 ▼▼▼
+	if (player_->DidJustJump()) {
+		Audio::GetInstance()->PlayWave(sfxJumpHandle_);
+	}
+
 	// --- 5. プレイヤーの物理演算と移動 ---
 	player_->InterpolateGravity();
 	float velocityX = player_->GetVelocityX();
@@ -289,9 +307,12 @@ void GameScene::Update() {
 						if (playerHP_ > 0) {
 							playerHP_--;
 							player_->OnDamage();
+
+							Audio::GetInstance()->PlayWave(sfxDamageHandle_); // ★ダメージ音を再生
+
 							if (playerHP_ < (int)hpWorldTransforms_.size()) {
 								hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-								hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+								hpWorldTransforms_[playerHP_]->UpdateMatarix();
 							}
 						}
 					}
@@ -367,30 +388,34 @@ void GameScene::Update() {
 			player_->SetPosition(playerPos);
 		}
 
+
 		// ★★★ 新しいアイテム当たり判定の処理 ★★★
 		if (platform->GetItemType() != ItemType::NONE) {
-			const AABB& playerAABB = player_->GetAABB(); // プレイヤーのAABBをここで取得
+			const AABB& playerAABB = player_->GetAABB();
 			const AABB& itemAABB = platform->GetItemAABB();
 
 			if (playerAABB.IsColliding(itemAABB)) {
 				// アイテム取得時の効果
 				switch (platform->GetItemType()) {
 				case ItemType::SPEED_RESET:
+					Audio::GetInstance()->PlayWave(sfxClockHandle_); // ▼▼▼ 時計の効果音を再生 ▼▼▼
 					gameTime_ -= 12.0f;
 					if (gameTime_ < 5.0f) {
 						gameTime_ = 5.0f;
 					}
-					platform->SetItemType(ItemType::NONE, player_->IsInversion()); // ★引数を追加
+					platform->SetItemType(ItemType::NONE, player_->IsInversion());
 					break;
 				case ItemType::HP_RECOVERY:
 					if (playerHP_ < 3) {
+						Audio::GetInstance()->PlayWave(sfxHealHandle_); // ▼▼▼ 回復の効果音を再生 ▼▼▼
+
 						if (playerHP_ < (int)hpWorldTransforms_.size()) {
 							hpWorldTransforms_[playerHP_]->scale_ = {1.5f, 1.5f, 0.5f};
-							hpWorldTransforms_[playerHP_]->UpdateMatarix(); // ★タイポ修正
+							hpWorldTransforms_[playerHP_]->UpdateMatarix();
 						}
 						playerHP_++;
 					}
-					platform->SetItemType(ItemType::NONE, player_->IsInversion()); // ★引数を追加
+					platform->SetItemType(ItemType::NONE, player_->IsInversion());
 					break;
 				default:
 					break;
@@ -479,6 +504,21 @@ void GameScene::Update() {
 	if (score_ != prevScore_) {
 		font_->Set(score_);
 		prevScore_ = score_;
+	}
+
+	// ▼▼▼ HP警告音の管理 ▼▼▼
+	// HPが1で、まだ警告音が鳴っていない場合
+	if (playerHP_ == 1 && !isWarningPlaying_) {
+		// ループ再生を開始し、再生ハンドルとフラグを記録
+		warningVoiceHandle_ = Audio::GetInstance()->PlayWave(sfxWarningHandle_, true);
+		isWarningPlaying_ = true;
+	}
+	// 警告音が鳴っていて、HPが1ではなくなった場合（回復した or ゲームオーバーになった）
+	else if (isWarningPlaying_ && playerHP_ != 1) {
+		// 再生を停止し、ハンドルとフラグをリセット
+		Audio::GetInstance()->StopWave(warningVoiceHandle_);
+		isWarningPlaying_ = false;
+		warningVoiceHandle_ = 0;
 	}
 
 	// --- 12. ゲームオーバー判定 ---

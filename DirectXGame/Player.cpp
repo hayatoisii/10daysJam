@@ -28,6 +28,7 @@ void Player::Update() {
 
 	// 前フレームの位置を保存
 	prevPosition_ = worldTransform_.translation_;
+	justJumped_ = false;
 
 	Input* input = KamataEngine::Input::GetInstance();
 	XINPUT_STATE xInputState;
@@ -67,14 +68,14 @@ void Player::Update() {
 			velocityY_ = inversion ? -jumpPower : jumpPower;
 			isJumping_ = true;
 			jumpCount_ = 1;
-			// ここで onGround_ = false; を「しない」ことが重要です。
-			// 地面にいるかどうかの最終判断は、この後のGameSceneの当たり判定に任せます。
+			justJumped_ = true; // ★ジャンプしたフラグを立てる
 		}
 		// もし空中で、まだジャンプできる回数が残っているなら、2段目のジャンプ
 		else if (jumpCount_ < maxJumpCount_) {
 			velocityY_ = inversion ? -jumpPower : jumpPower;
 			isJumping_ = true;
 			jumpCount_++;
+			justJumped_ = true; // ★ジャンプしたフラグを立てる
 		}
 	}
 	// ★★★ 変更点はここまで ★★★

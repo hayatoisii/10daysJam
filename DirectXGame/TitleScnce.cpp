@@ -47,6 +47,9 @@ void TitleScnce::Initialize() {
 	textureHandle3_ = KamataEngine::TextureManager::Load("Title/HitEnter.png");
 	sprite3_ = KamataEngine::Sprite::Create(textureHandle3_, {0, 0});
 
+	sfxConfirmHandle_ = Audio::GetInstance()->LoadWave("audio/confirm.wav");
+
+
 	Timer_ = 0.0f;
 	isFinished_ = false;
 	isMovingDown = false;
@@ -93,19 +96,11 @@ void TitleScnce::Update() {
 		}
 	}
 
-		// Enterキーでタイトル終了
+	// Enterキーでタイトル終了
 	if (input_->TriggerKey(DIK_RETURN) || isConfirmTriggered) {
+		Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
 		isFinished_ = true;
-		// タイトル終了時にアニメーション状態をリセット
-		isFlipping = false;
-		flipProgress = 0.0f;
-		currentScale = 1.0f;
-		isFlipped = false;
-		if (sprite2_) {
-			sprite2_->SetIsFlipX(false);
-			// サイズも元に戻す
-			sprite2_->SetSize({1280.0f, 720.0f});
-		}
+		// ... (以降のアニメーションリセット処理は省略) ...
 	}
 
 	// sprites[1] のアニメーション - イージング付き（タイトル中のみ）

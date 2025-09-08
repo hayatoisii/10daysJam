@@ -55,11 +55,15 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 
+	// ▼▼▼ オーディオ関連の処理をここにまとめます ▼▼▼
 	Audio::GetInstance()->Initialize();
-	// "BGM.wav"を読み込み、サウンドデータハンドルとして保持
-	uint32_t bgmSoundHandle = Audio::GetInstance()->LoadWave("audio/BGM.wav");
-	// 再生中のBGMを識別するためのボイスハンドル（最初は0で初期化）
-	uint32_t bgmVoiceHandle = 0;
+	// BGMの読み込み
+	uint32_t titleBgmHandle = Audio::GetInstance()->LoadWave("audio/TitleBGM.wav"); // タイトル用BGM
+	uint32_t gameBgmHandle = Audio::GetInstance()->LoadWave("audio/BGM.wav");       // ゲーム用BGM
+	uint32_t sfxGameOverHandle = Audio::GetInstance()->LoadWave("audio/gameover.wav");
+	// 再生中BGMのハンドル
+	uint32_t titleBgmVoiceHandle = 0;
+	uint32_t gameBgmVoiceHandle = 0;
 
 	// main関数の前に
 	TitleScnce* titleScnce = nullptr;
@@ -100,6 +104,12 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 		// シーンごとに処理を分岐
 		switch (scene) {
 		case Scene::Title:
+			// ▼▼▼ タイトルBGMの再生管理 ▼▼▼
+			if (!Audio::GetInstance()->IsPlaying(titleBgmVoiceHandle)) {
+				// 停止していたら再生を開始
+				titleBgmVoiceHandle = Audio::GetInstance()->PlayWave(titleBgmHandle, true);
+			}
+
 			titleScnce->Update();
 			titleScnce->Draw();
 			if (titleScnce->IsSelectFinished()) {
@@ -108,13 +118,20 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			break;
 
 		case Scene::Select:
+			// ▼▼▼ タイトルBGMが継続して再生されていることを確認 ▼▼▼
+			if (!Audio::GetInstance()->IsPlaying(titleBgmVoiceHandle)) {
+				titleBgmVoiceHandle = Audio::GetInstance()->PlayWave(titleBgmHandle, true);
+			}
+
 			selectScene->Update();
 			selectScene->Draw();
 			if (selectScene->IsGameStart()) {
+				// ▼▼▼ BGMの切り替え ▼▼▼
+				Audio::GetInstance()->StopWave(titleBgmVoiceHandle);                      // タイトルBGMを停止
+				gameBgmVoiceHandle = Audio::GetInstance()->PlayWave(gameBgmHandle, true); // ゲームBGMを開始
+
 				scene = Scene::Game;
 				gameScnce->Initialize();
-				// ▼▼▼ ゲームシーン開始時にBGMの再生を開始します（trueでループ再生）▼▼▼
-				bgmVoiceHandle = Audio::GetInstance()->PlayWave(bgmSoundHandle, true);
 			}
 			break;
 
@@ -122,8 +139,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			gameScnce->Update();
 			gameScnce->Draw();
 			if (gameScnce->IsGameOver()) {
-				// ▼▼▼ ゲームオーバー時にBGMを停止します ▼▼▼
-				Audio::GetInstance()->StopWave(bgmVoiceHandle);
+				// ▼▼▼ ゲームオーバー時の処理 ▼▼▼
+				Audio::GetInstance()->StopWave(gameBgmVoiceHandle); // ゲームBGMを停止
+				Audio::GetInstance()->PlayWave(sfxGameOverHandle);  // ★ゲームオーバー効果音を再生
 
 				int finalScore = gameScnce->GetScore();
 				if (finalScore > bestScore) {
@@ -132,9 +150,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				}
 				gameOverScene->Initialize(finalScore, bestScore);
 				scene = Scene::GameOver;
+
 			} else if (gameScnce->IsGameClear()) {
-				// ▼▼▼ ゲームクリア時もBGMを停止させます ▼▼▼
-				Audio::GetInstance()->StopWave(bgmVoiceHandle);
+				Audio::GetInstance()->StopWave(gameBgmVoiceHandle);
 				scene = Scene::GameClear;
 			}
 			break;

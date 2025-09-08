@@ -45,4 +45,5 @@ private:
 	int bestScore_ = 0;                              // ベストスコア
 	KamataEngine::Sprite* bestTextSprite_ = nullptr; // 「BEST」の文字スプライト
 	uint32_t bestTextTextureHandle_ = 0;
+	uint32_t sfxConfirmHandle_ = 0;
 };
