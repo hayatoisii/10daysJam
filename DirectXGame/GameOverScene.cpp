@@ -3,8 +3,8 @@
 GameOverScene::~GameOverScene() {
 	delete gameOverSprite_;
 	delete font_;
-	delete bestScoreFont_;  // ▼▼▼ 追加 ▼▼▼
-	delete bestTextSprite_; // ▼▼▼ 追加 ▼▼▼
+	delete bestScoreFont_; 
+	delete bestTextSprite_;
 }
 
 
