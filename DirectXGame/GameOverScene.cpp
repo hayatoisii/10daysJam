@@ -21,8 +21,9 @@ void GameOverScene::Initialize(int currentScore, int bestScore) {
 	gameOverSprite_->SetPosition({0, 0});
 
 	// 「BEST」の文字スプライトを初期化
-	bestTextTextureHandle_ = KamataEngine::TextureManager::Load("M.png"); // ★★★「BEST」と書かれた画像を用意してください
+	bestTextTextureHandle_ = KamataEngine::TextureManager::Load("we.png"); // ★★★「BEST」と書かれた画像を用意してください
 	bestTextSprite_ = KamataEngine::Sprite::Create(bestTextTextureHandle_, {0.0f, 0.0f});
+	bestTextSprite_->SetPosition({0.0f, 0.0f});
 
 	// 今回のスコア用フォント
 	font_ = new BIt_Map_Font();
@@ -59,26 +60,23 @@ void GameOverScene::Draw() {
 	ID3D12GraphicsCommandList* commandList = dxCommon_->GetCommandList();
 
 	KamataEngine::Sprite::PreDraw(commandList);
+
 	if (gameOverSprite_) {
 		gameOverSprite_->Draw();
 	}
-	KamataEngine::Sprite::PostDraw();
-
-	// ▼▼▼ 描画処理を全面的に書き換え ▼▼▼
-	// ベストスコアの描画
-	if (bestTextSprite_ && bestScoreFont_) {
-		//// 「BEST」の文字の位置とサイズ
-		//bestTextSprite_->SetPosition({420.0f, 80.0f});
-		//bestTextSprite_->SetSize({120.0f, 50.0f}); // サイズは画像に合わせて調整
-		//bestTextSprite_->Draw();
-
-		// ベストスコアの数字の位置とサイズ
+	if (bestTextSprite_) {
+		bestTextSprite_->SetPosition({440.0f, 105.0f});
+		bestTextSprite_->SetSize({160.0f, 50.0f});
+		bestTextSprite_->Draw();
+	}
+	if (bestScoreFont_) {
 		bestScoreFont_->SetPosition({600.0f, 70.0f});
 		bestScoreFont_->SetScale(1.5f);
 		bestScoreFont_->Draw();
 	}
 
-	// 今回のスコアの描画
+	KamataEngine::Sprite::PostDraw();
+
 	if (font_) {
 		font_->SetPosition({480.0f, 170.0f});
 		font_->SetScale(2.0f);
