@@ -23,7 +23,7 @@ void SelectScene::Initialize() {
 
 
 	// タイトルから戻ってきたときの再初期化に備えてフラグをリセット
-	isGameStart_ = false;
+	selectionResult_ = SelectionResult::None; // 選択状態をリセット
 
 	textureHandle_ = KamataEngine::TextureManager::Load("select/1.png");
 	selectSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
@@ -129,11 +129,29 @@ void SelectScene::Update() {
 		}
 	}
 
-	if (currentSelectIndex_ == 0) {
-		// EnterキーまたはAボタンが押されたらゲーム開始
-		if (input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
-			Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
-			isGameStart_ = true;
+	//if (currentSelectIndex_ == 0) {
+	//	// EnterキーまたはAボタンが押されたらゲーム開始
+	//	if (input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
+	//		Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
+	//		isGameStart_ = true;
+	//	}
+	//}
+
+
+	if (input_->TriggerKey(DIK_RETURN) || input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
+		Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
+
+		// 現在のカーソル位置によって結果をセットする
+		switch (currentSelectIndex_) {
+		case 0: // 1枚目の画像
+			selectionResult_ = SelectionResult::StartGame;
+			break;
+		case 1: // 2枚目の画像 (select/2.png)
+			selectionResult_ = SelectionResult::StartTutorial;
+			break;
+		case 2:                                          // 3枚目の画像
+			selectionResult_ = SelectionResult::Option3; // とりあえずOption3としておく
+			break;
 		}
 	}
 

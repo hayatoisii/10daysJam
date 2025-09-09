@@ -6,6 +6,7 @@
 #include "GameClearScene.h"
 #include "GameOverScene.h"
 #include "HowToPlayScene.h"
+#include "TutorialScene.h"
 #include <fstream> // ▼▼▼ 追加 ▼▼▼
 #include <string>  // ▼▼▼ 追加 ▼▼▼
 #include <Windows.h>
@@ -40,7 +41,7 @@ void SaveBestScore(int score) {
 }
 
 // main.cppの修正
-enum class Scene { Title, Select, HowToPlay, Game, GameOver, Pause, GameClear };
+enum class Scene { Title, Select, HowToPlay, Tutorial, Game, GameOver, Pause, GameClear };
 
 Scene scene = Scene::Title;
 
@@ -74,6 +75,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	HowToPlayScene* howToPlayScene = nullptr;
 	PauseMenu* pauseMenu = nullptr;
 	GameClearScene* gameClearScene = nullptr;
+	TutorialScene* tutorialScene = nullptr;
 
 	// タイトルシーンの初期化
 	titleScnce = new TitleScnce();
@@ -97,6 +99,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	gameClearScene = new GameClearScene();
 	gameClearScene->Initialize();
+
+	tutorialScene = new TutorialScene(); // tutorialSceneをnew
+	tutorialScene->Initialize();        // Initializeを呼ぶ
 
 	// メインループ
 	while (true) {
@@ -130,12 +135,41 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 			selectScene->Update();
 			selectScene->Draw();
-			if (selectScene->IsGameStart()) {
-				// ▼▼▼ ゲームシーンへの移行を、HowToPlayシーンへの移行に変更 ▼▼▼
-				// BGMの切り替えは次のシーンで行うため、ここでは何もしない
+
+			// ▼▼▼ SelectSceneの結果に応じてシーンを遷移させる ▼▼▼
+
+			switch (selectScene->GetSelection()) {
+
+			case SelectScene::SelectionResult::StartGame:
+				// ゲーム本編を開始
+				Audio::GetInstance()->StopWave(titleBgmVoiceHandle);
+				gameBgmVoiceHandle = Audio::GetInstance()->PlayWave(gameBgmHandle, true);
+				scene = Scene::Game;
+				gameScnce->Initialize();
+				selectScene->Initialize(); // 次回のためにリセット
+				break;
+
+
+			case SelectScene::SelectionResult::StartTutorial:
+				// チュートリアルシーンへ遷移
+				Audio::GetInstance()->StopWave(titleBgmVoiceHandle); // ▼▼▼ 変更点: BGMを停止 ▼▼▼
+				scene = Scene::Tutorial;
+				tutorialScene->Initialize(); // チュートリアルを初期化
+				selectScene->Initialize();   // 次回のためにリセット
+				break;
+
+			case SelectScene::SelectionResult::Option3:
+				// 3枚目が選ばれた際の処理（今はHowToPlayにしておく）
 				scene = Scene::HowToPlay;
-				// gameScnce->Initialize() もここでは呼ばない
+				howToPlayScene->Initialize();
+				selectScene->Initialize();
+				break;
+
+			default:
+				// まだ何も選択されていない
+				break;
 			}
+
 			break;
 
 		// ▼▼▼ HowToPlayシーンのケースを丸ごと追加 ▼▼▼
@@ -158,6 +192,31 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 				gameScnce->Initialize();      // ゲームシーンを初期化して開始
 				howToPlayScene->Initialize(); // 次回のためにHowToPlayシーンもリセット
 			}
+			break;
+
+			// ▼▼▼ Tutorialシーンの処理を追加 ▼▼▼
+		// ▼▼▼ Tutorialシーンの処理を追加 ▼▼▼
+		case Scene::Tutorial:
+
+			tutorialScene->Update();
+			tutorialScene->Draw();
+
+			// ▼▼▼ ここから変更 ▼▼▼
+			// HPが0になりゲームオーバーになったらタイトルへ戻る
+			if (tutorialScene->IsGameOver()) {
+				scene = Scene::Title;
+				titleScnce->Initialize();  // タイトルシーンをリセット
+				selectScene->Initialize(); // セレクトシーンをリセット
+
+			} else if (tutorialScene->IsFinished()) {
+				// (もしクリア条件があるなら)チュートリアルが終わったらゲーム本編へ
+				Audio::GetInstance()->StopWave(titleBgmVoiceHandle);
+				gameBgmVoiceHandle = Audio::GetInstance()->PlayWave(gameBgmHandle, true);
+				scene = Scene::Game;
+				gameScnce->Initialize();
+			}
+			// ▲▲▲ ここまで変更 ▲▲▲
+
 			break;
 
 		case Scene::Game:
@@ -236,7 +295,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	pauseMenu = nullptr;
 	delete gameClearScene;
 	gameClearScene = nullptr;
-
+	delete tutorialScene; // tutorialSceneをdelete
+	tutorialScene = nullptr;
 
 	// ここでゲームシーンの終了処理を行う
 

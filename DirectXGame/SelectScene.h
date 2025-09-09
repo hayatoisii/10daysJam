@@ -7,11 +7,22 @@ using namespace KamataEngine;
 // イージング関数（EaseOutCubic）
 float EaseOutCubic(float t);
 
+
 /// <summary>
 /// 選択シーン
 /// </summary>
 class SelectScene {
 public:
+
+	// どの選択肢が決定されたかを示すための型（enum）
+
+	enum class SelectionResult {
+	None,          // 何も選択されていない
+	StartGame,     // ゲーム開始 (1枚目)
+	StartTutorial, // チュートリアル開始 (2枚目)
+	Option3        // 3枚目の選択肢
+	};
+
 	~SelectScene();
 
 	/// <summary>
@@ -32,7 +43,7 @@ public:
 	/// <summary>
 	/// ゲーム開始が決定したかを取得
 	/// </summary>
-	bool IsGameStart() const { return isGameStart_; }
+	SelectionResult GetSelection() const { return selectionResult_; }
 
 private:
 	/// <summary>
@@ -46,7 +57,7 @@ private:
 	void UpdateArrowAnimation();
 
 private:
-	bool isGameStart_ = false;
+	SelectionResult selectionResult_ = SelectionResult::None; // 選択結果を保持
 	DirectXCommon* dxCommon_ = nullptr;
 	Input* input_ = nullptr;
 	Sprite* selectSprite_ = nullptr;
