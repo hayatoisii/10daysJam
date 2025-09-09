@@ -50,7 +50,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	// 初期化処理
 	//  // エンジンの初期化
 
-	KamataEngine::Initialize(L"LE3C_26_ムラタ_トモキ");
+	KamataEngine::Initialize(L"3041_反転ボール");
 
 	int bestScore = LoadBestScore();
 

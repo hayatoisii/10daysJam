@@ -47,7 +47,7 @@ void GameScene::Initialize() {
 	randomEngine_ = std::mt19937(rd());
 
 	// モデルの読み込み
-	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("cube", true);
+	modelPlayer_ = KamataEngine::Model::CreateFromOBJ("player", true);
 	modelPlatform_ = KamataEngine::Model::CreateFromOBJ("platform", true);
 	modelEnd_ = KamataEngine::Model::CreateFromOBJ("end", true);
 	hpModel_ = KamataEngine::Model::CreateFromOBJ("heart", true);
