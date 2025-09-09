@@ -35,6 +35,8 @@ void TitleScnce::Initialize() {
 	input_ = KamataEngine::Input::GetInstance();
 	audio_ = KamataEngine::Audio::GetInstance();
 
+	camera_.Initialize();
+
 	textureHandle_ = KamataEngine::TextureManager::Load("Title/Title1.png");
 	sprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
 
@@ -60,10 +62,11 @@ void TitleScnce::Initialize() {
 
 	InitializeSprites();
 
-	//// 天球の初期化
-	//modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
-	//skydome_ = new Skydome();
-	//skydome_->Initialize(modelSkydome_, &camera_);
+	// 天球の初期化
+	modelSkydome_ = KamataEngine::Model::CreateFromOBJ("skydome", true);
+	skydome_ = new Skydome();
+	// これで、正しく初期化されたカメラを渡すことができます
+	skydome_->Initialize(modelSkydome_, &camera_);
 }
 
 void TitleScnce::InitializeSprites() {
