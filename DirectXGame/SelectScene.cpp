@@ -10,6 +10,7 @@ SelectScene::~SelectScene() {
 	delete selectSprite_2;
 	delete selectSprite_3;
 	delete arrowSprite_;
+	delete aButtonSprite_;
 }
 
 void SelectScene::Initialize() {
@@ -40,12 +41,23 @@ void SelectScene::Initialize() {
 	selectSprite_3 = KamataEngine::Sprite::Create(textureHandle_3, {0, 0});
 	selectSprite_3->SetPosition({0, 0}); // 画面中央に配置
 
-	KeytextureHandle_ = KamataEngine::TextureManager::Load("key.png");
+    KeytextureHandle_ = KamataEngine::TextureManager::Load("key.png");
 	KeyselectSprite_ = KamataEngine::Sprite::Create(KeytextureHandle_, {0, 0});
-	KeyselectSprite_->SetPosition({0, 0}); // 画面中央に配置
 	KeyselectSprite_->SetAnchorPoint({0.5f, 0.5f});
-	// 画面下部の中央に配置
-	KeyselectSprite_->SetPosition({1280.0f / 2.0f, 720.0f - 100.0f});
+
+	// ▼▼▼ ここを調整します ▼▼▼
+	// KeyselectSprite_のX座標を調整して、全体の配置の基準にする
+	KeyselectSprite_->SetPosition({1280.0f / 2.0f - 100.0f, 720.0f - 100.0f}); // 例えば、-100.0fに大きくずらしてみる
+
+	aButtonTextureHandle_ = KamataEngine::TextureManager::Load("a_button.png");
+	aButtonSprite_ = KamataEngine::Sprite::Create(aButtonTextureHandle_, {0, 0});
+	aButtonSprite_->SetAnchorPoint({0.5f, 0.5f});
+
+	// KeyselectSprite_の右隣に配置
+	Vector2 keySpritePos = KeyselectSprite_->GetPosition();
+	// ▼▼▼ ここを調整します ▼▼▼
+	// aButtonSprite_のX座標をKeyselectSprite_のX座標からさらに右にずらす
+	aButtonSprite_->SetPosition({keySpritePos.x + 300.0f, keySpritePos.y}); // 例えば、+100.0fに大きくずらしてみる
 
 	// 矢印スプライトの作成
 	arrowTextureHandle_ = KamataEngine::TextureManager::Load("select/Sentaku.png");
@@ -231,6 +243,10 @@ void SelectScene::Draw() {
 	// キースプライトを描画
 	if (KeyselectSprite_) {
 		KeyselectSprite_->Draw();
+	}
+
+	if (aButtonSprite_) {
+		aButtonSprite_->Draw();
 	}
 
 	// 2D描画終了

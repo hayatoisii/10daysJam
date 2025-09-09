@@ -5,6 +5,7 @@
 #include "PauseMenu.h"
 #include "GameClearScene.h"
 #include "GameOverScene.h"
+#include "HowToPlayScene.h"
 #include <fstream> // ▼▼▼ 追加 ▼▼▼
 #include <string>  // ▼▼▼ 追加 ▼▼▼
 #include <Windows.h>
@@ -39,7 +40,7 @@ void SaveBestScore(int score) {
 }
 
 // main.cppの修正
-enum class Scene { Title, Select, Game, GameOver, Pause, GameClear };
+enum class Scene { Title, Select, HowToPlay, Game, GameOver, Pause, GameClear };
 
 Scene scene = Scene::Title;
 
@@ -70,6 +71,7 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	SelectScene* selectScene = nullptr;
 	GameScene* gameScnce = nullptr;
 	GameOverScene* gameOverScene = nullptr;
+	HowToPlayScene* howToPlayScene = nullptr;
 	PauseMenu* pauseMenu = nullptr;
 	GameClearScene* gameClearScene = nullptr;
 
@@ -86,6 +88,9 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 
 	gameOverScene = new GameOverScene();
 	//gameOverScene->Initialize();
+
+	howToPlayScene = new HowToPlayScene();
+	howToPlayScene->Initialize();
 
 	pauseMenu = new PauseMenu();
 	pauseMenu->Initialize();
@@ -126,12 +131,32 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 			selectScene->Update();
 			selectScene->Draw();
 			if (selectScene->IsGameStart()) {
-				// ▼▼▼ BGMの切り替え ▼▼▼
-				Audio::GetInstance()->StopWave(titleBgmVoiceHandle);                      // タイトルBGMを停止
-				gameBgmVoiceHandle = Audio::GetInstance()->PlayWave(gameBgmHandle, true); // ゲームBGMを開始
+				// ▼▼▼ ゲームシーンへの移行を、HowToPlayシーンへの移行に変更 ▼▼▼
+				// BGMの切り替えは次のシーンで行うため、ここでは何もしない
+				scene = Scene::HowToPlay;
+				// gameScnce->Initialize() もここでは呼ばない
+			}
+			break;
+
+		// ▼▼▼ HowToPlayシーンのケースを丸ごと追加 ▼▼▼
+		case Scene::HowToPlay:
+			// タイトルBGMを継続
+			if (!Audio::GetInstance()->IsPlaying(titleBgmVoiceHandle)) {
+				titleBgmVoiceHandle = Audio::GetInstance()->PlayWave(titleBgmHandle, true);
+			}
+
+			howToPlayScene->Update();
+			howToPlayScene->Draw();
+
+			// 操作説明シーンが終わったらゲームシーンへ
+			if (howToPlayScene->IsFinished()) {
+				// BGMの切り替え
+				Audio::GetInstance()->StopWave(titleBgmVoiceHandle);
+				gameBgmVoiceHandle = Audio::GetInstance()->PlayWave(gameBgmHandle, true);
 
 				scene = Scene::Game;
-				gameScnce->Initialize();
+				gameScnce->Initialize();      // ゲームシーンを初期化して開始
+				howToPlayScene->Initialize(); // 次回のためにHowToPlayシーンもリセット
 			}
 			break;
 
@@ -203,6 +228,8 @@ int WINAPI WinMain(_In_ HINSTANCE, _In_opt_ HINSTANCE, _In_ LPSTR, _In_ int) {
 	titleScnce = nullptr;
 	delete selectScene;
 	selectScene = nullptr;
+	delete howToPlayScene;    // 追加
+	howToPlayScene = nullptr; // 追加
 	delete gameOverScene;
 	gameOverScene = nullptr;
 	delete pauseMenu;

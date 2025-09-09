@@ -56,6 +56,7 @@ private:
 
 	Sprite* KeyselectSprite_ = nullptr;
 	Sprite* arrowSprite_ = nullptr; // 矢印スプライト
+	Sprite* aButtonSprite_ = nullptr;
 
 	uint32_t textureHandle_ = 0;
 	uint32_t textureHandle_1 = 0;
@@ -63,6 +64,7 @@ private:
 	uint32_t textureHandle_3 = 0;
 	uint32_t KeytextureHandle_ = 0;
 	uint32_t arrowTextureHandle_ = 0; // 矢印テクスチャハンドル
+	uint32_t aButtonTextureHandle_ = 0;
 
 	// 矢印の移動
 	int currentSelectIndex_ = 0;
