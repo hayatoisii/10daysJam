@@ -21,7 +21,6 @@ void SelectScene::Initialize() {
 	sfxSelectHandle_ = Audio::GetInstance()->LoadWave("audio/select.wav");
 	sfxConfirmHandle_ = Audio::GetInstance()->LoadWave("audio/confirm.wav");
 
-
 	// タイトルから戻ってきたときの再初期化に備えてフラグをリセット
 	selectionResult_ = SelectionResult::None; // 選択状態をリセット
 
@@ -41,7 +40,7 @@ void SelectScene::Initialize() {
 	selectSprite_3 = KamataEngine::Sprite::Create(textureHandle_3, {0, 0});
 	selectSprite_3->SetPosition({0, 0}); // 画面中央に配置
 
-    KeytextureHandle_ = KamataEngine::TextureManager::Load("key.png");
+	KeytextureHandle_ = KamataEngine::TextureManager::Load("key.png");
 	KeyselectSprite_ = KamataEngine::Sprite::Create(KeytextureHandle_, {0, 0});
 	KeyselectSprite_->SetAnchorPoint({0.5f, 0.5f});
 
@@ -129,25 +128,24 @@ void SelectScene::Update() {
 		}
 	}
 
-	//if (currentSelectIndex_ == 0) {
+	// if (currentSelectIndex_ == 0) {
 	//	// EnterキーまたはAボタンが押されたらゲーム開始
 	//	if (input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
 	//		Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
 	//		isGameStart_ = true;
 	//	}
-	//}
-
+	// }
 
 	if (input_->TriggerKey(DIK_RETURN) || input_->TriggerKey(DIK_SPACE) || isAButtonTriggered) {
 		Audio::GetInstance()->PlayWave(sfxConfirmHandle_); // ★決定音を再生
 
 		// 現在のカーソル位置によって結果をセットする
 		switch (currentSelectIndex_) {
-		case 0: // 1枚目の画像
-			selectionResult_ = SelectionResult::StartGame;
+		case 0:                                                // 1枚目の画像
+			selectionResult_ = SelectionResult::StartTutorial; // チュートリアルシーンへ
 			break;
-		case 1: // 2枚目の画像 (select/2.png)
-			selectionResult_ = SelectionResult::StartTutorial;
+		case 1:                                            // 2枚目の画像 (select/2.png)
+			selectionResult_ = SelectionResult::StartGame; // ゲーム本編へ
 			break;
 		case 2:                                          // 3枚目の画像
 			selectionResult_ = SelectionResult::Option3; // とりあえずOption3としておく

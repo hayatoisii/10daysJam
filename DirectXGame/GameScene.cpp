@@ -167,9 +167,23 @@ void GameScene::Initialize() {
 // GameScene.cpp
 
 void GameScene::Update() {
+
 	// --- 1. 時間経過と全体スピードの更新 ---
 	gameTime_ += 1.0f / 60.0f;
-	speedMultiplier_ = 1.0f + (gameTime_ / 15.0f) * 1.5f;
+
+	// 40秒経過したかどうかでスクロール速度の計算方法を切り替える
+	if (gameTime_ < 15.0f) {
+		// 40秒未満の場合、スクロール速度を一定に保つ
+		speedMultiplier_ = 1.5f;
+	} else {
+		// 40秒経過後、経過時間に応じてだんだん速くする
+		// 40秒時点から加速が始まるように、経過時間から40秒を引く
+		float elapsedTimeAfter40s = gameTime_ - 15.0f;
+		// 基本速度1.5fに、40秒後からの経過時間に応じて速度を加算（この計算式で加速具合を調整できます）
+		speedMultiplier_ = 1.5f + (elapsedTimeAfter40s / 15.0f) * 1.5f;
+	}
+
+	// 速度に上限を設ける
 	if (speedMultiplier_ > 200.0f) {
 		speedMultiplier_ = 200.0f;
 	}
@@ -520,12 +534,12 @@ void GameScene::Update() {
 		isGameOver_ = true;
 	}
 
-	if (!player_->IsDead()) {
-		Vector3 playerPos = player_->GetPosition();
-		if (playerPos.y > 23.0f || playerPos.y < -23.0f) {
-			isGameOver_ = true;
-		}
-	}
+	//if (!player_->IsDead()) {
+	//	Vector3 playerPos = player_->GetPosition();
+	//	if (playerPos.y > 25.0f || playerPos.y < -25.0f) {
+	//		isGameOver_ = true;
+	//	}
+	//}
 }
 
 void GameScene::Draw() {

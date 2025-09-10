@@ -34,9 +34,8 @@ void TutorialScene::Initialize() {
 
 	//// チュートリアル用の画像（例: "tutorial.png"）を読み込む
 	//// この画像はプロジェクトに用意してください
-	//textureHandle_ = KamataEngine::TextureManager::Load("tutorial.png");
-	//tutorialSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
-
+	// textureHandle_ = KamataEngine::TextureManager::Load("tutorial.png");
+	// tutorialSprite_ = KamataEngine::Sprite::Create(textureHandle_, {0, 0});
 
 	// 再初期化時のクリーンアップ
 	if (player_ != nullptr) {
@@ -100,7 +99,6 @@ void TutorialScene::Initialize() {
 	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
 
-
 	// アクションフラグを初期化
 	hasPlayerMoved_ = false;
 	hasPlayerJumped_ = false;
@@ -133,7 +131,6 @@ void TutorialScene::Initialize() {
 	tutorialStageSprite_7 = Sprite::Create(tutorialStageTexHandle_7, {0.0f, 0.0f});
 
 	// ▲▲▲ 修正ここまで ▲▲▲
-
 
 	float windowWidth = 640;
 	float windowHeight = 720;
@@ -222,16 +219,26 @@ void TutorialScene::Initialize() {
 void TutorialScene::Update() {
 
 	// --- 1. 時間経過と全体スピードの更新 ---
-	gameTime_ += 1.0f / 60.0f; // 40秒タイマーのために時間は計測し続ける
-	// ▼▼▼ 変更点: speedMultiplier_ を固定値にする ▼▼▼
-	speedMultiplier_ = 1.5f; // これでスクロール速度が一定になります（値は好みで調整してください）
+	gameTime_ += 1.0f / 60.0f;
 
-	if (!isTutorialPhase2_ && gameTime_ >= 30.0f) {
-		isTutorialPhase2_ = true;
+	// 40秒経過したかどうかでスクロール速度の計算方法を切り替える
+	if (gameTime_ < 40.0f) {
+		// 40秒未満の場合、スクロール速度を一定に保つ
+		speedMultiplier_ = 1.5f;
+	} else {
+		// 40秒経過後、経過時間に応じてだんだん速くする
+		// 40秒時点から加速が始まるように、経過時間から40秒を引く
+		float elapsedTimeAfter40s = gameTime_ - 40.0f;
+		// 基本速度1.5fに、40秒後からの経過時間に応じて速度を加算（この計算式で加速具合を調整できます）
+		speedMultiplier_ = 1.5f + (elapsedTimeAfter40s / 15.0f) * 1.5f;
+	}
+
+	// 速度に上限を設ける
+	if (speedMultiplier_ > 200.0f) {
+		speedMultiplier_ = 200.0f;
 	}
 
 	float scrollSpeed = 0.0f;
-
 
 	if (!player_->IsDead()) {
 
@@ -489,7 +496,6 @@ void TutorialScene::Update() {
 			}
 		}
 
-
 		// --- 7. 画面端での重力反転処理 ---
 		playerPos = player_->GetPosition();
 		if (!player_->IsInversion()) {
@@ -571,6 +577,13 @@ void TutorialScene::Update() {
 			prevScore_ = score_;
 		}
 
+		// ▼▼▼ ここから追加 ▼▼▼
+		// スコアが5000に達したら終了フラグを立てる
+		if (score_ >= 5000) {
+			isFinished_ = true;
+		}
+		// ▲▲▲ ここまで追加 ▲▲▲
+
 		// ▼▼▼ HP警告音の管理 ▼▼▼
 		if (playerHP_ == 1 && !isWarningPlaying_) {
 			warningVoiceHandle_ = Audio::GetInstance()->PlayWave(sfxWarningHandle_, true);
@@ -613,13 +626,12 @@ void TutorialScene::Update() {
 		isGameOver_ = true;
 	}
 
-	//if (!player_->IsDead()) {
+	// if (!player_->IsDead()) {
 	//	Vector3 playerPos = player_->GetPosition();
 	//	if (playerPos.y > 23.0f || playerPos.y < -23.0f) {
 	//		isGameOver_ = true;
 	//	}
-	//}
-
+	// }
 }
 
 void TutorialScene::Draw() {
@@ -686,7 +698,6 @@ void TutorialScene::Draw() {
 		}
 		// 操作ガイドは描画しない
 	}
-
 
 	Sprite::PostDraw();
 
