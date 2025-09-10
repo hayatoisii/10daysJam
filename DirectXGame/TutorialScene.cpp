@@ -11,6 +11,8 @@ TutorialScene::~TutorialScene() {
 
 	delete skySprite1_;
 	delete skySprite2_;
+	delete spriteGravityLineTop_;
+	delete spriteGravityLineBottom_;
 
 	delete font_;
 
@@ -105,7 +107,7 @@ void TutorialScene::Initialize() {
 	hasPlayerReversedGravity_ = false;
 
 	// --- 1. ヘッダー画像 ---
-	tutorialStageTexHandle_ = TextureManager::Load("tutorialStage/tutorialStage.png");
+	tutorialStageTexHandle_ = TextureManager::Load("tutorialStage/tutorialStage100.png");
 	tutorialStageSprite_ = Sprite::Create(tutorialStageTexHandle_, {0.0f, 0.0f});
 	tutorialStageTexHandle_1 = TextureManager::Load("tutorialStage/tutorialStage1.png");
 	tutorialStageSprite_1 = Sprite::Create(tutorialStageTexHandle_1, {0.0f, 0.0f});
@@ -218,6 +220,10 @@ void TutorialScene::Initialize() {
 
 void TutorialScene::Update() {
 
+	if (input_->TriggerKey(DIK_R)) {
+		isFinished_ = true;
+	}
+
 	// --- 1. 時間経過と全体スピードの更新 ---
 	gameTime_ += 1.0f / 60.0f;
 
@@ -260,7 +266,7 @@ void TutorialScene::Update() {
 			Platform* platform = new Platform();
 
 			// ゲーム時間が30秒未満かそれ以上かで処理を分岐
-			if (gameTime_ < 30.0f) {
+			if (gameTime_ < 14.0f) {
 				// --- 30秒未満（安全な期間） ---
 				// トゲのない通常の足場のみを生成する
 				Vector3 scale = {1.3f, 1.0f, 1.0f};
@@ -428,33 +434,37 @@ void TutorialScene::Update() {
 				}
 
 				if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
-					if (!player_->IsInversion()) {
-						playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
-						player_->SetOnGround(true);
-					} else {
-						playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
-						player_->SetOnGround(true);
-					}
 
-					if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
-						if (!player_->IsInvincible()) {
-							if (playerHP_ > 0) {
-								playerHP_--;
-								player_->OnDamage();
-								if (playerHP_ < (int)hpWorldTransforms_.size()) {
-									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+					if ((!player_->IsInversion() && player_->GetVelocityY() <= 0.0f) || (player_->IsInversion() && player_->GetVelocityY() >= 0.0f)) {
+
+						if (!player_->IsInversion()) {
+							playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+							player_->SetOnGround(true);
+						} else {
+							playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+							player_->SetOnGround(true);
+						}
+
+						if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
+							if (!player_->IsInvincible()) {
+								if (playerHP_ > 0) {
+									playerHP_--;
+									player_->OnDamage();
+									if (playerHP_ < (int)hpWorldTransforms_.size()) {
+										hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+										hpWorldTransforms_[playerHP_]->UpdateMatarix();
+									}
 								}
 							}
-						}
-					} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
-						if (!player_->IsInvincible()) {
-							if (playerHP_ > 0) {
-								playerHP_--;
-								player_->OnDamage();
-								if (playerHP_ < (int)hpWorldTransforms_.size()) {
-									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+						} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
+							if (!player_->IsInvincible()) {
+								if (playerHP_ > 0) {
+									playerHP_--;
+									player_->OnDamage();
+									if (playerHP_ < (int)hpWorldTransforms_.size()) {
+										hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+										hpWorldTransforms_[playerHP_]->UpdateMatarix();
+									}
 								}
 							}
 						}
@@ -578,8 +588,8 @@ void TutorialScene::Update() {
 		}
 
 		// ▼▼▼ ここから追加 ▼▼▼
-		// スコアが5000に達したら終了フラグを立てる
-		if (score_ >= 5000) {
+		// スコアが1500に達したら終了フラグを立てる
+		if (score_ >= 1000) {
 			isFinished_ = true;
 		}
 		// ▲▲▲ ここまで追加 ▲▲▲
@@ -652,6 +662,13 @@ void TutorialScene::Draw() {
 	// 「チュートリアルステージ」のタイトルは常に表示
 	if (tutorialStageSprite_) {
 		tutorialStageSprite_->Draw();
+	}
+
+	if (spriteGravityLineTop_) {
+		spriteGravityLineTop_->Draw();
+	}
+	if (spriteGravityLineBottom_) {
+		spriteGravityLineBottom_->Draw();
 	}
 
 	// ゲームの経過時間に応じて表示を切り替える

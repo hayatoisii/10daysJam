@@ -25,8 +25,13 @@ private:
 	uint32_t textureHandle_ = 0;
 	bool isFinished_ = false;
 
+	// 重力反転ライン用スプライトのメンバ変数
+	uint32_t spriteGravityLineTopHandle_ = 0;
+	uint32_t spriteGravityLineBottomHandle_ = 0;
+	Sprite* spriteGravityLineTop_ = nullptr;
+	Sprite* spriteGravityLineBottom_ = nullptr;
 
-		// プレイヤーオブジェクトへのポインタ
+	// プレイヤーオブジェクトへのポインタ
 	Player* player_ = nullptr;
 
 	// プレイヤーモデル
@@ -56,12 +61,6 @@ private:
 	KamataEngine::Model* modelEnd_ = nullptr;
 	WorldTransform endTransformLeft_;
 	WorldTransform endTransformRight_;
-
-	// ▼▼▼ 重力反転ライン用スプライトのメンバ変数を追加 ▼▼▼
-	uint32_t spriteGravityLineTopHandle_ = 0;
-	uint32_t spriteGravityLineBottomHandle_ = 0;
-	Sprite* spriteGravityLineTop_ = nullptr;
-	Sprite* spriteGravityLineBottom_ = nullptr;
 
 	uint32_t skyTextureHandle_ = 0;
 	Sprite* skySprite1_ = nullptr;
