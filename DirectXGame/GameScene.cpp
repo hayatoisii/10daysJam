@@ -9,10 +9,6 @@ GameScene::~GameScene() {
 	for (auto wt : hpWorldTransforms_) {
 		delete wt;
 	}
-
-	delete skySprite1_;
-	delete skySprite2_;
-
 	delete font_;
 }
 
@@ -56,10 +52,10 @@ void GameScene::Initialize() {
 	modelPlatformItemSpeedReset_ = KamataEngine::Model::CreateFromOBJ("time", true);
 	modelItemHpRecovery_ = KamataEngine::Model::CreateFromOBJ("HPheal", true);
 
-	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backblack", true);
-	transformBackground_.Initialize();
-	transformBackground_.translation_ = {0.0f, 0.0f, 20.0f};
-	transformBackground_.UpdateMatarix(); // ★タイポ修正
+	modelBlackBg_ = KamataEngine::Model::CreateFromOBJ("BackBlack", true);
+	transformBlackBg_.Initialize();
+	transformBlackBg_.translation_ = {0.0f, 0.0f, 20.0f};
+	transformBlackBg_.UpdateMatarix();
 
 	// ▼▼▼ 以下を追加 ▼▼▼
 	isWarningPlaying_ = false; // 警告音フラグをリセット
@@ -74,20 +70,19 @@ void GameScene::Initialize() {
 	sfxWarningHandle_ = Audio::GetInstance()->LoadWave("audio/warning.wav");
 
 
-	// 背景スプライトの初期化
-	skyTextureHandle_ = TextureManager::Load("sky.png");
-	skySprite1_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
-	skySprite2_ = Sprite::Create(skyTextureHandle_, {0.0f, 0.0f});
-	
-	float windowWidth = 640;
-	float windowHeight = 720;
+	// 背景モデルの読み込みと初期化
+	modelBackground_ = KamataEngine::Model::CreateFromOBJ("backrock", true);
 
-	skySprite1_->SetSize({windowWidth, windowHeight});
-	skySprite2_->SetSize({windowWidth, windowHeight});
-	skySprite1_->SetAnchorPoint({0.5f, 0.5f});
-	skySprite2_->SetAnchorPoint({0.5f, 0.5f});
-	skySprite1_->SetPosition({windowWidth, windowHeight});
-	skySprite2_->SetPosition({windowWidth, windowHeight - windowHeight});
+	// 1つ目の背景の初期化
+	transformBackground1_.Initialize();
+	transformBackground1_.translation_ = {0.0f, 0.0f, -37.7f};
+	transformBackground1_.UpdateMatarix();
+
+	// 2つ目の背景の初期化
+	transformBackground2_.Initialize();
+	transformBackground2_.translation_ = {0.0f, backgroundHeight_, -37.7f};
+	transformBackground2_.UpdateMatarix();
+
 
 	// HPのUI初期化
 	for (int i = 0; i < playerHP_; i++) {
@@ -443,31 +438,36 @@ void GameScene::Update() {
 		}
 
 		// --- 8. 背景の更新 ---
-		if (skySprite1_ && skySprite2_) {
-			const float spriteSpeedModifier = 17.0f;
-			float spriteScrollSpeed = -scrollSpeed * spriteSpeedModifier;
-			Vector2 skyPos1 = skySprite1_->GetPosition();
-			skyPos1.y += spriteScrollSpeed;
-			skySprite1_->SetPosition(skyPos1);
-			Vector2 skyPos2 = skySprite2_->GetPosition();
-			skyPos2.y += spriteScrollSpeed;
-			skySprite2_->SetPosition(skyPos2);
-			float windowHeight = (float)WinApp::kWindowHeight;
-			if (spriteScrollSpeed > 0) {
-				if (skyPos1.y > windowHeight + windowHeight / 2.0f) {
-					skySprite1_->SetPosition({skyPos1.x, skyPos2.y - windowHeight});
+		if (modelBackground_) {
+			// 2つの背景をスクロール速度に合わせて動かす
+			transformBackground1_.translation_.y += scrollSpeed / 4;
+			transformBackground2_.translation_.y += scrollSpeed / 4;
+
+			// 背景2枚分の合計の高さ
+			const float totalBackgroundHeight = backgroundHeight_ * 2;
+
+			// 上にスクロールしていく場合（プレイヤーは下降中）のループ処理
+			if (scrollSpeed > 0) {
+				if (transformBackground1_.translation_.y >= backgroundHeight_ - 5.0f) {
+					transformBackground1_.translation_.y -= totalBackgroundHeight;
 				}
-				if (skyPos2.y > windowHeight + windowHeight / 2.0f) {
-					skySprite2_->SetPosition({skyPos2.x, skyPos1.y - windowHeight});
-				}
-			} else {
-				if (skyPos1.y < -windowHeight / 2.0f) {
-					skySprite1_->SetPosition({skyPos1.x, skyPos2.y + windowHeight});
-				}
-				if (skyPos2.y < -windowHeight / 2.0f) {
-					skySprite2_->SetPosition({skyPos2.x, skyPos1.y + windowHeight});
+				if (transformBackground2_.translation_.y >= backgroundHeight_ - 5.0f) {
+					transformBackground2_.translation_.y -= totalBackgroundHeight;
 				}
 			}
+			// 下にスクロールしていく場合（プレイヤーは上昇中）のループ処理
+			else {
+				if (transformBackground1_.translation_.y <= -backgroundHeight_ - 5.0f) {
+					transformBackground1_.translation_.y += totalBackgroundHeight;
+				}
+				if (transformBackground2_.translation_.y <= -backgroundHeight_ - 5.0f) {
+					transformBackground2_.translation_.y += totalBackgroundHeight;
+				}
+			}
+
+			// 座標を更新したので行列も更新する
+			transformBackground1_.UpdateMatarix();
+			transformBackground2_.UpdateMatarix();
 		}
 
 		// --- 9. 画面外の足場を削除 ---
@@ -547,9 +547,15 @@ void GameScene::Draw() {
 	DirectXCommon* dxCommon = DirectXCommon::GetInstance();
 	Model::PreDraw(dxCommon->GetCommandList());
 
-	if (modelBackground_) {
-		modelBackground_->Draw(transformBackground_, camera_);
+	if (modelBlackBg_) {
+		modelBlackBg_->Draw(transformBlackBg_, camera_);
 	}
+
+	if (modelBackground_) {
+		modelBackground_->Draw(transformBackground1_, camera_);
+		modelBackground_->Draw(transformBackground2_, camera_);
+	}
+
 	Model::PostDraw();
 
 	dxCommon->ClearDepthBuffer();
@@ -557,12 +563,6 @@ void GameScene::Draw() {
 	// 2D描画前準備
 	Sprite::PreDraw(dxCommon->GetCommandList());
 	// 2D描画（必要ならここに描画処理を書く）
-	if (skySprite1_) {
-		skySprite1_->Draw();
-	}
-	if (skySprite2_) {
-		skySprite2_->Draw();
-	}
 	if (spriteGravityLineTop_) {
 		spriteGravityLineTop_->Draw();
 	}
