@@ -353,33 +353,37 @@ void GameScene::Update() {
 				}
 
 				if (!collisionHandled && playerAABB.IsColliding(platformAABB)) {
-					if (!player_->IsInversion()) {
-						playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
-						player_->SetOnGround(true);
-					} else {
-						playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
-						player_->SetOnGround(true);
-					}
 
-					if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
-						if (!player_->IsInvincible()) {
-							if (playerHP_ > 0) {
-								playerHP_--;
-								player_->OnDamage();
-								if (playerHP_ < (int)hpWorldTransforms_.size()) {
-									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+					if ((!player_->IsInversion() && player_->GetVelocityY() <= 0.0f) || (player_->IsInversion() && player_->GetVelocityY() >= 0.0f)) {
+
+						if (!player_->IsInversion()) {
+							playerPos.y = platformAABB.GetMax().y + playerHalfSize.y;
+							player_->SetOnGround(true);
+						} else {
+							playerPos.y = platformAABB.GetMin().y - playerHalfSize.y;
+							player_->SetOnGround(true);
+						}
+
+						if (platform->GetDamageDirection() == DamageDirection::TOP && !player_->IsInversion()) {
+							if (!player_->IsInvincible()) {
+								if (playerHP_ > 0) {
+									playerHP_--;
+									player_->OnDamage();
+									if (playerHP_ < (int)hpWorldTransforms_.size()) {
+										hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+										hpWorldTransforms_[playerHP_]->UpdateMatarix();
+									}
 								}
 							}
-						}
-					} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
-						if (!player_->IsInvincible()) {
-							if (playerHP_ > 0) {
-								playerHP_--;
-								player_->OnDamage();
-								if (playerHP_ < (int)hpWorldTransforms_.size()) {
-									hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
-									hpWorldTransforms_[playerHP_]->UpdateMatarix();
+						} else if (platform->GetDamageDirection() == DamageDirection::BOTTOM && player_->IsInversion()) {
+							if (!player_->IsInvincible()) {
+								if (playerHP_ > 0) {
+									playerHP_--;
+									player_->OnDamage();
+									if (playerHP_ < (int)hpWorldTransforms_.size()) {
+										hpWorldTransforms_[playerHP_]->scale_ = {0, 0, 0};
+										hpWorldTransforms_[playerHP_]->UpdateMatarix();
+									}
 								}
 							}
 						}
