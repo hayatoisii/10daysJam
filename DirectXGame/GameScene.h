@@ -64,9 +64,14 @@ private:
 	Sprite* spriteGravityLineTop_ = nullptr;
 	Sprite* spriteGravityLineBottom_ = nullptr;
 
-	uint32_t skyTextureHandle_ = 0;
-	Sprite* skySprite1_ = nullptr;
-	Sprite* skySprite2_ = nullptr;
+	KamataEngine::Model* modelBackground_ = nullptr;
+	WorldTransform transformBackground1_;
+	WorldTransform transformBackground2_;
+
+	KamataEngine::Model* modelBlackBg_ = nullptr;
+	WorldTransform transformBlackBg_;
+
+	const float backgroundHeight_ = 12.0f; 
 
 	// HP用モデル
 	Model* hpModel_ = nullptr;
@@ -77,7 +82,6 @@ private:
 	Model* modelPlatformItemSpeedReset_ = nullptr;
 	Model* modelItemHpRecovery_ = nullptr; // ★追加：HP回復アイテムモデル
 
-	KamataEngine::Model* modelBackground_ = nullptr;
 	WorldTransform transformBackground_;
 
 	// プラットフォーム生成タイマー（経過時間）
